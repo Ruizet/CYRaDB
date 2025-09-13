@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Inventario - Farmacia C&R</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9f9f9;
+      text-align: center;
+      padding: 20px;
+    }
+
+    h2 {
+      color: #b22222;
+      margin-bottom: 20px;
+    }
+
+    #buscador {
+      margin-bottom: 20px;
+      padding: 8px;
+      width: 60%;
+      font-size: 16px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+    }
+
+    table {
+      margin: 0 auto;
+      border-collapse: collapse;
+      width: 90%;
+      max-width: 1200px;
+      background-color: #fff;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: center;
+    }
+
+    th {
+      background-color: #ffe5e5;
+      color: #b22222;
+    }
+
+    tr:nth-child(even) {
+      background-color: #f5f5f5;
+    }
+
+    button {
+      background-color: #b22222;
+      color: white;
+      border: none;
+      padding: 5px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #d33;
+    }
+  </style>
+</head>
+<body>
+  <h2>📦 Inventario - Farmacia C&R</h2>
+
+  <input type="text" id="buscador" placeholder="Buscar medicamento por nombre...">
+
+  <table id="tablaInventario">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Nombre</th>
+        <th>Presentación</th>
+        <th>Paquetes</th>
+        <th>Unidades/Paquete</th>
+        <th>Stock Total</th>
+        <th>Precio Unitario</th>
+        <th>Fecha Ingreso</th>
+        <th>Fecha Vencimiento</th>
+        <th>Acciones</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- Aquí van los medicamentos -->
+    </tbody>
+  </table>
+
+  <script>
+    async function cargarInventario(){
+      try {
+        const res = await fetch("http://localhost:3000/inventario");
+        const data = await res.json();
+        const cuerpo = document.querySelector("#tablaInventario tbody");
+        cuerpo.innerHTML = "";
+
+        data.forEach(med => {
+          const fila = document.createElement("tr");
+          fila.innerHTML = `
+            <td>${med.idmedicamento}</td>
+            <td>${med.nombremedicamento}</td>
+            <td>${med.presentacion}</td>
+            <td>${med.cantidadpaquetes}</td>
+            <td>${med.cantidaditems}</td>
+            <td>${med.cantidadpaquetes * med.cantidaditems}</td>
+            <td>${parseFloat(med.preciounitario).toFixed(2)}</td>
+            <td>${new Date(med.fechaingreso).toLocaleDateString()}</td>
+            <td>${new Date(med.fechavencimiento).toLocaleDateString()}</td>
+            <td><button onclick="eliminar(${med.idmedicamento})">🗑️</button></td>
+          `;
+          cuerpo.appendChild(fila);
+        });
+      } catch (err) {
+        console.error("Error cargando inventario:", err);
+      }
+    }
+
+    async function eliminar(id){
+      if(confirm("¿Seguro que deseas eliminar este medicamento?")){
+        const res = await fetch(`http://localhost:3000/inventario/${id}`, { method: 'DELETE' });
+        if(res.ok){
+          alert("✅ Medicamento eliminado");
+          cargarInventario();
+        } else {
+          alert("❌ Error al eliminar");
+        }
+      }
+    }
+
+    function filtrarTabla(){
+      const texto = document.getElementById('buscador').value.toLowerCase();
+      const filas = document.querySelectorAll("#tablaInventario tbody tr");
+
+      filas.forEach(fila => {
+        const nombre = fila.cells[1].textContent.toLowerCase(); 
+        fila.style.display = nombre.includes(texto) ? "" : "none";
+      });
+    }
+
+    document.getElementById('buscador').addEventListener("keyup", filtrarTabla);
+
+    cargarInventario();
+  </script>
+</body>
+</html>

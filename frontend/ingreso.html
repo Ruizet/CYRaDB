@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Ingreso Medicamentos - Farmacia C&R</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="container">
+    <h1>Ingreso de Medicamentos</h1>
+    <input type="text" id="nombre" placeholder="Nombre del medicamento">
+    <select id="presentacion">
+      <option value="caja">Caja</option>
+      <option value="sobre">Sobre</option>
+      <option value="frasco">Frasco</option>
+    </select>
+    <input type="number" id="paquetes" placeholder="Cantidad de paquetes (ej: 4 cajas)">
+    <input type="number" id="cantidad" placeholder="Unidades por paquete (ej: 100 pastillas)">
+    <input type="number" step="0.01" id="precio" placeholder="Precio por unidad (C$)">
+    <label for="fechaVencimiento">Fecha de vencimiento:</label>
+    <input type="date" id="fechaVencimiento">
+    <button onclick="ingresar()">Ingresar</button>
+    <p id="msg" style="color:green;text-align:center;"></p>
+    <button onclick="location.href='dashboard.html'">Volver</button>
+  </div>
+
+  <script>
+  async function ingresar(){
+  const nombreMedicamento = document.getElementById('nombre').value.trim();
+  const presentacion = document.getElementById('presentacion').value.trim();
+  const cantidadPaquetes = parseInt(document.getElementById('paquetes').value);
+  const cantidadItems = parseInt(document.getElementById('cantidad').value);
+  const fechaVencimiento = document.getElementById('fechaVencimiento').value;
+  const precioUnitario = parseFloat(document.getElementById('precio').value);
+
+  if(!nombreMedicamento) return mostrarError("❌ Falta el nombre del medicamento");
+  if(!presentacion) return mostrarError("❌ Falta la presentación");
+  if(isNaN(cantidadPaquetes) || cantidadPaquetes <= 0) return mostrarError("❌ Cantidad de paquetes inválida");
+  if(isNaN(cantidadItems) || cantidadItems <= 0) return mostrarError("❌ Cantidad por paquete inválida");
+  if(!fechaVencimiento) return mostrarError("❌ Falta la fecha de vencimiento");
+  if(isNaN(precioUnitario) || precioUnitario <= 0) return mostrarError("❌ Precio unitario inválido");
+
+  try {
+    const res = await fetch('http://localhost:3000/inventario/ingresar', {
+      method: 'POST',
+      headers: { 'Content-Type':'application/json' },
+      body: JSON.stringify({ nombreMedicamento, presentacion, cantidadPaquetes, cantidadItems, fechaVencimiento, precioUnitario })
+    });
+
+    if(res.ok){
+      mostrarExito("✅ Medicamento ingresado con éxito");
+    } else {
+      mostrarError("❌ Error al ingresar medicamento");
+    }
+  } catch (err) {
+    mostrarError("❌ Error de conexión con el servidor");
+  }
+}
+
+function mostrarError(msg){
+  document.getElementById('msg').textContent = msg;
+  document.getElementById('msg').style.color = "red";
+}
+
+function mostrarExito(msg){
+  document.getElementById('msg').textContent = msg;
+  document.getElementById('msg').style.color = "green";
+}
+  </script>
+</body>
+</html>

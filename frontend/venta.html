@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Facturación - Farmacia C&R</title>
+  <style>
+    body { font-family: Arial; background: #f9f9f9; text-align: center; padding: 20px; }
+    h2 { color: #b22222; }
+    #buscador { width: 60%; padding: 8px; margin-bottom: 15px; border-radius: 6px; }
+    table { margin: 0 auto; border-collapse: collapse; width: 90%; max-width: 900px; background: white; }
+    th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
+    th { background: #ffe5e5; color: #b22222; }
+    tr:nth-child(even) { background: #f5f5f5; }
+    button { background: #b22222; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; }
+    button:hover { background: #d33; }
+    .resumen { margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h2>🧾 Facturación - Farmacia C&R</h2>
+
+  <input type="text" id="buscador" placeholder="Buscar medicamento...">
+  <table id="tablaMedicamentos">
+    <thead>
+      <tr>
+        <th>Nombre</th>
+        <th>Presentación</th>
+        <th>Stock</th>
+        <th>Precio Unitario</th>
+        <th>Cantidad</th>
+        <th>Acción</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
+
+  <div class="resumen">
+    <h3>Factura</h3>
+    <table id="tablaFactura">
+      <thead>
+        <tr>
+          <th>Medicamento</th>
+          <th>Cantidad</th>
+          <th>Subtotal</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <h3>Total: C$ <span id="total">0.00</span></h3>
+
+    <label for="mediopago">Método de pago:</label>
+    <select id="mediopago">
+      <option value="efectivo">Efectivo</option>
+      <option value="tarjeta">Tarjeta</option>
+    </select>
+    <br><br>
+    <button onclick="confirmarVenta()">✅ Confirmar Venta</button>
+  </div>
+
+  <script>
+    let medicamentos = [];
+    let factura = [];
+
+    async function cargarMedicamentos(){
+      const res = await fetch("http://localhost:3000/inventario");
+      medicamentos = await res.json();
+      mostrarMedicamentos(medicamentos);
+    }
+
+    function mostrarMedicamentos(lista){
+      const cuerpo = document.querySelector("#tablaMedicamentos tbody");
+      cuerpo.innerHTML = "";
+      lista.forEach(med => {
+        const stockTotal = med.cantidadpaquetes * med.cantidaditems;
+        const fila = document.createElement("tr");
+        fila.innerHTML = `
+          <td>${med.nombremedicamento}</td>
+          <td>${med.presentacion}</td>
+          <td>${stockTotal}</td>
+          <td>C$ ${parseFloat(med.preciounitario).toFixed(2)}</td>
+          <td><input type="number" min="1" max="${stockTotal}" value="1" id="cant-${med.idmedicamento}"></td>
+          <td><button onclick="agregarFactura(${med.idmedicamento})">➕</button></td>
+        `;
+        cuerpo.appendChild(fila);
+      });
+    }
+
+    function agregarFactura(id){
+      const med = medicamentos.find(m => m.idmedicamento === id);
+      const cant = parseInt(document.getElementById(`cant-${id}`).value);
+      if(cant > med.cantidadpaquetes * med.cantidaditems){
+        alert("❌ Stock insuficiente");
+        return;
+      }
+
+      const subtotal = cant * med.preciounitario;
+      factura.push({ idmedicamento: id, nombre: med.nombremedicamento, cantidad: cant, subtotal });
+
+      actualizarFactura();
+    }
+
+    function actualizarFactura(){
+      const cuerpo = document.querySelector("#tablaFactura tbody");
+      cuerpo.innerHTML = "";
+      let total = 0;
+      factura.forEach(item => {
+        total += item.subtotal;
+        const fila = document.createElement("tr");
+        fila.innerHTML = `
+          <td>${item.nombre}</td>
+          <td>${item.cantidad}</td>
+          <td>C$ ${item.subtotal.toFixed(2)}</td>
+        `;
+        cuerpo.appendChild(fila);
+      });
+      document.getElementById("total").textContent = total.toFixed(2);
+    }
+
+    async function confirmarVenta(){
+      if(factura.length === 0){
+        alert("❌ No hay medicamentos en la factura");
+        return;
+      }
+
+      const usuarioActual = JSON.parse(localStorage.getItem("usuarioActual"));
+      if(!usuarioActual){
+        alert("❌ Sesión inválida, vuelve a iniciar sesión");
+        return;
+      }
+
+      const mediopago = document.getElementById("mediopago").value;
+
+      const res = await fetch("http://localhost:3000/ventas", {
+        method: "POST",
+        headers: { "Content-Type":"application/json" },
+        body: JSON.stringify({
+          idusuario: usuarioActual.idusuario,  // 👈 ahora se usa el usuario logueado
+          items: factura.map(f => ({ idmedicamento: f.idmedicamento, cantidad: f.cantidad })),
+          mediopago
+        })
+      });
+
+      if(res.ok){
+        alert("✅ Venta registrada con éxito");
+        factura = [];
+        actualizarFactura();
+        cargarMedicamentos();
+      } else {
+        alert("❌ Error al registrar venta");
+      }
+    }
+
+
+    document.getElementById("buscador").addEventListener("keyup", (e)=>{
+      const texto = e.target.value.toLowerCase();
+      const filtrados = medicamentos.filter(m => m.nombremedicamento.toLowerCase().includes(texto));
+      mostrarMedicamentos(filtrados);
+    });
+
+    cargarMedicamentos();
+  </script>
+</body>
+</html>

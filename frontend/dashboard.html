@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Dashboard | Farmacia C&R</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body {
+      background: #f8f8f8;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      background: #b23a48;
+      color: white;
+      padding: 1rem;
+      width: 100%;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+
+    .dashboard {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      margin-top: 3rem;
+      gap: 2rem;
+    }
+
+    .card {
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      width: 200px;
+      height: 150px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-decoration: none;
+      color: #333;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .card:hover {
+      transform: translateY(-5px);
+      box-shadow: 0 6px 14px rgba(0,0,0,0.15);
+    }
+
+    .card h2 {
+      margin: 0;
+      font-size: 1.1rem;
+      color: #b23a48;
+    }
+
+    /* Submenú para Registros */
+    .submenu {
+      display: none;
+      flex-direction: column;
+      margin-top: 1rem;
+      gap: 1rem;
+    }
+
+    .submenu a {
+      background: #fff;
+      padding: 1rem;
+      border-radius: 8px;
+      text-decoration: none;
+      color: #333;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      transition: background 0.2s;
+      text-align: center;
+    }
+
+    .submenu a:hover {
+      background: #f3d0d3;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    Dashboard - Farmacia C&R
+  </header>
+
+  <div class="dashboard">
+    <a class="card" href="inventario.html">
+      <h2>Inventario</h2>
+    </a>
+    <a class="card" href="ingreso.html">
+      <h2>Ingreso de Medicamentos</h2>
+    </a>
+    <a class="card" href="venta.html">
+      <h2>Facturación / Venta</h2>
+    </a>
+
+    <!-- Botón Registros con submenú -->
+    <div class="card" onclick="toggleRegistros()">
+      <h2>Registros</h2>
+    </div>
+  </div>
+
+  <div class="submenu" id="submenu">
+    <a href="detalleventas.html">Detalle Ventas</a>
+    <a href="detallecompras.html">Detalle Compras</a>
+  </div>
+
+  <script>
+    function toggleRegistros(){
+      const submenu = document.getElementById("submenu");
+      submenu.style.display = submenu.style.display === "flex" ? "none" : "flex";
+    }
+    
+    function logout(){
+      localStorage.removeItem('usuario');
+      window.location.href = "index.html";
+    }
+  </script>
+</body>
+</html>

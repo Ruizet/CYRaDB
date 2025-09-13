@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Login | Farmacia C&R</title>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body {
+      background: #f8f8f8;
+      font-family: Arial, sans-serif;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+
+    .login-card {
+      background: #fff;
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      width: 350px;
+      text-align: center;
+    }
+
+    .login-card h1 {
+      margin-bottom: 1.5rem;
+      color: #b23a48; /* rojo suave */
+    }
+
+    .login-card input {
+      width: 100%;
+      padding: 0.8rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 14px;
+    }
+
+    .login-card button {
+      width: 100%;
+      padding: 0.8rem;
+      background: #b23a48;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      font-size: 15px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .login-card button:hover {
+      background: #922d3a;
+    }
+
+    .login-footer {
+      margin-top: 1rem;
+      font-size: 12px;
+      color: #555;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-card">
+    <h1>Farmacia C&R</h1>
+    <input type="text" id="usuario" placeholder="Usuario">
+    <input type="password" id="contrasena" placeholder="Contraseña">
+    <button onclick="login()">Ingresar</button>
+    <div class="login-footer">
+      © 2025 Farmacia C&R
+    </div>
+  </div>
+
+  <script>
+    async function login(){
+      const usuario = document.getElementById("usuario").value;
+      const contrasena = document.getElementById("contrasena").value;
+
+     const res = await fetch("http://localhost:3000/usuarios/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ usuario, contrasena })
+      });
+
+
+      const data = await res.json();
+      if(res.ok){
+        localStorage.setItem("usuarioActual", JSON.stringify(data)); 
+        window.location.href = "dashboard.html";
+      } else {
+        alert("❌ Usuario o contraseña incorrectos");
+      }
+    }
+  </script>
+</body>
+</html>
