@@ -2,70 +2,247 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Ingreso Medicamentos - Farmacia C&R</title>
-  <link rel="stylesheet" href="style.css">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ingreso de Medicamentos | Farmacia C&R</title>
+  <style>
+    :root { --primary: #b23a48; --success: #28a745; --danger: #dc3545; --gray: #6c757d; --light: #f8f9fa; --border: #dee2e6; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%); font-family: 'Segoe UI', sans-serif; padding: 1.5rem; }
+    .container { max-width: 1000px; margin: 0 auto; background: white; border-radius: 16px; padding: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.12); }
+    h1 { color: var(--primary); text-align: center; margin-bottom: 1.5rem; }
+    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
+    label { font-weight: 600; font-size: 0.95rem; display: block; margin-bottom: 0.4rem; }
+    input, select { width: 100%; padding: 0.8rem; border: 1.5px solid var(--border); border-radius: 10px; font-size: 1rem; }
+    input:focus, select:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(178,58,72,0.15); }
+    .btn { padding: 0.7rem 1rem; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; }
+    .btn-add { background: var(--success); color: white; }
+    .btn-remove { background: var(--danger); color: white; width: 36px; }
+    .btn-submit { background: var(--primary); color: white; padding: 1rem; font-size: 1.1rem; width: 100%; margin-top: 1rem; }
+    table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
+    th, td { padding: 0.8rem; text-align: left; border-bottom: 1px solid #eee; }
+    th { background: #f8f9fa; font-weight: 600; color: var(--primary); }
+    .mensaje { padding: 1rem; border-radius: 10px; margin: 1rem 0; text-align: center; font-weight: 600; }
+    .exito { background: #d4edda; color: #155724; }
+    .error { background: #f8d7da; color: #721c24; }
+  </style>
 </head>
 <body>
   <div class="container">
-    <h1>Ingreso de Medicamentos</h1>
-    <input type="text" id="nombre" placeholder="Nombre del medicamento">
-    <select id="presentacion">
-      <option value="caja">Caja</option>
-      <option value="sobre">Sobre</option>
-      <option value="frasco">Frasco</option>
-    </select>
-    <input type="number" id="paquetes" placeholder="Cantidad de paquetes (ej: 4 cajas)">
-    <input type="number" id="cantidad" placeholder="Unidades por paquete (ej: 100 pastillas)">
-    <input type="number" step="0.01" id="precio" placeholder="Precio por unidad (C$)">
-    <label for="fechaVencimiento">Fecha de vencimiento:</label>
-    <input type="date" id="fechaVencimiento">
-    <button onclick="ingresar()">Ingresar</button>
-    <p id="msg" style="color:green;text-align:center;"></p>
-    <button onclick="location.href='dashboard.html'">Volver</button>
+    <h1>Ingreso de Compra</h1>
+
+    <div class="form-grid">
+      <div>
+        <label>Proveedor</label>
+        <select id="proveedor" required></select>
+      </div>
+    </div>
+
+    <hr style="margin: 2rem 0; border: 1px dashed #ddd;">
+
+    <h2>Agregar Medicamentos</h2>
+    
+    <div class="form-grid" id="itemForm">
+      <div>
+        <label>Nombre Medicamento</label>
+        <input type="text" id="nombre" placeholder="Ej: Acetaminofén" required>
+      </div>
+      
+      <div>
+        <label>Presentación</label>
+        <select id="presentacion">
+          <option value="caja">Caja</option>
+          <option value="frasco">Frasco</option>
+          <option value="blister">Blíster</option>
+          <option value="sobre">Sobre</option>
+          <option value="ampolla">Ampolla</option>
+          <option value="unidad">Unidad</option>
+        </select>
+      </div>
+
+      <div>
+        <label style="color: var(--success);">Cantidad TOTAL (Unidades)</label>
+        <input type="number" id="cantidadTotal" min="1" placeholder="Total de pastillas/unidades" required>
+        <small style="color:gray;">Ej: Si compraste 5 cajas de 100, pon 500.</small>
+      </div>
+
+      <div>
+        <label>Ubicación / Estante</label>
+        <input type="text" id="estante" placeholder="Ej: A3, B12">
+      </div>
+
+      <div>
+        <label style="color: var(--primary);">Costo Total Compra (C$)</label>
+        <input type="number" step="0.01" id="precio" min="0.01" placeholder="Lo que pagaste por todo" required>
+      </div>
+      
+      <div>
+        <label>Fecha Vencimiento</label>
+        <input type="date" id="vencimiento" required>
+      </div>
+      
+      <div style="display:flex; align-items:end;">
+        <button type="button" class="btn btn-add" onclick="agregarItem()">+ Agregar</button>
+      </div>
+    </div>
+
+    <table id="tablaItems">
+      <thead>
+        <tr>
+          <th>Medicamento</th>
+          <th>Cant. Total</th>
+          <th>Estante</th>
+          <th>Costo Lote</th>
+          <th>Acción</th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+
+    <h3>Total Factura: C$ <span id="totalCompra">0.00</span></h3>
+
+    <button class="btn btn-submit" onclick="enviarCompra()" id="btnEnviar" disabled>
+      Confirmar y Guardar Compra
+    </button>
+
+    <div id="mensaje"></div>
+    <a href="dashboard.html" style="display:block; text-align:center; margin-top:1rem; color:var(--primary);">Volver al Dashboard</a>
   </div>
 
   <script>
-  async function ingresar(){
-  const nombreMedicamento = document.getElementById('nombre').value.trim();
-  const presentacion = document.getElementById('presentacion').value.trim();
-  const cantidadPaquetes = parseInt(document.getElementById('paquetes').value);
-  const cantidadItems = parseInt(document.getElementById('cantidad').value);
-  const fechaVencimiento = document.getElementById('fechaVencimiento').value;
-  const precioUnitario = parseFloat(document.getElementById('precio').value);
-
-  if(!nombreMedicamento) return mostrarError("❌ Falta el nombre del medicamento");
-  if(!presentacion) return mostrarError("❌ Falta la presentación");
-  if(isNaN(cantidadPaquetes) || cantidadPaquetes <= 0) return mostrarError("❌ Cantidad de paquetes inválida");
-  if(isNaN(cantidadItems) || cantidadItems <= 0) return mostrarError("❌ Cantidad por paquete inválida");
-  if(!fechaVencimiento) return mostrarError("❌ Falta la fecha de vencimiento");
-  if(isNaN(precioUnitario) || precioUnitario <= 0) return mostrarError("❌ Precio unitario inválido");
-
-  try {
-    const res = await fetch('http://localhost:3000/inventario/ingresar', {
-      method: 'POST',
-      headers: { 'Content-Type':'application/json' },
-      body: JSON.stringify({ nombreMedicamento, presentacion, cantidadPaquetes, cantidadItems, fechaVencimiento, precioUnitario })
-    });
-
-    if(res.ok){
-      mostrarExito("✅ Medicamento ingresado con éxito");
-    } else {
-      mostrarError("❌ Error al ingresar medicamento");
+    let items = [];
+    
+    // --- LÓGICA DE SESIÓN ---
+    const usuarioJSON = localStorage.getItem("usuarioActual");
+    if (!usuarioJSON) {
+        alert("Debes iniciar sesión primero.");
+        window.location.href = "login.html";
+        throw new Error("Sin sesión"); 
     }
-  } catch (err) {
-    mostrarError("❌ Error de conexión con el servidor");
-  }
-}
+    const usuarioSesion = JSON.parse(usuarioJSON);
+    const ID_USUARIO_ACTUAL = usuarioSesion.idusuario;
+    // ------------------------
 
-function mostrarError(msg){
-  document.getElementById('msg').textContent = msg;
-  document.getElementById('msg').style.color = "red";
-}
+    const proveedorSelect = document.getElementById("proveedor");
 
-function mostrarExito(msg){
-  document.getElementById('msg').textContent = msg;
-  document.getElementById('msg').style.color = "green";
-}
+    async function cargarProveedores() {
+      try {
+        const res = await fetch("http://localhost:3000/proveedores"); 
+        const data = await res.json();
+        proveedorSelect.innerHTML = '<option value="">Selecciona proveedor</option>';
+        data.forEach(p => {
+          const opt = new Option(p.nombre, p.idproveedor);
+          proveedorSelect.add(opt);
+        });
+      } catch(e) { console.error("Error cargando proveedores"); }
+    }
+
+    function actualizarTabla() {
+      const tbody = document.querySelector("#tablaItems tbody");
+      tbody.innerHTML = "";
+      let total = 0;
+
+      items.forEach((item, i) => {
+        total += parseFloat(item.costoTotalLote);
+        const tr = document.createElement("tr");
+        tr.innerHTML = `
+          <td><strong>${item.nombreMedicamento}</strong><br><small>${item.presentacion}</small></td>
+          <td>${item.cantidadTotal} Unid.</td>
+          <td>${item.ubicacionEstante || '—'}</td>
+          <td>C$ ${parseFloat(item.costoTotalLote).toFixed(2)}</td>
+          <td><button class="btn btn-remove" onclick="eliminarItem(${i})">X</button></td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      document.getElementById("totalCompra").textContent = total.toFixed(2);
+      document.getElementById("btnEnviar").disabled = items.length === 0 || !proveedorSelect.value;
+    }
+
+    function eliminarItem(index) {
+        items.splice(index, 1);
+        actualizarTabla();
+    }
+
+    function agregarItem() {
+      const nombre = document.getElementById("nombre").value.trim();
+      const precioInput = parseFloat(document.getElementById("precio").value); 
+      // AHORA TOMAMOS EL DATO DIRECTO
+      const cantidadTotalInput = parseInt(document.getElementById("cantidadTotal").value);
+
+      if (!nombre) return alert("Ingresa el nombre del medicamento");
+      if (!cantidadTotalInput || cantidadTotalInput <= 0) return alert("Ingresa la cantidad total de unidades");
+      if (!precioInput || precioInput <= 0) return alert("Ingresa el Costo Total");
+
+      const item = {
+        nombreMedicamento: nombre,
+        presentacion: document.getElementById("presentacion").value,
+        cantidadTotal: cantidadTotalInput, // Valor directo
+        costoTotalLote: precioInput,  
+        ubicacionEstante: document.getElementById("estante").value.trim() || null,
+        fechaVencimiento: document.getElementById("vencimiento").value
+      };
+
+      if (!item.fechaVencimiento) return alert("Ingresa la fecha de vencimiento");
+
+      items.push(item);
+      actualizarTabla();
+
+      // Limpiar campos
+      document.getElementById("nombre").value = "";
+      document.getElementById("precio").value = "";
+      document.getElementById("cantidadTotal").value = ""; // Limpiamos cantidad
+      document.getElementById("nombre").focus();
+    }
+
+    async function enviarCompra() {
+      if (items.length === 0) return;
+      if (!proveedorSelect.value) return mostrarMensaje("Selecciona un proveedor", "error");
+
+      const payload = {
+        idProveedor: proveedorSelect.value,
+        idUsuario: ID_USUARIO_ACTUAL,
+        items: items
+      };
+
+      const btn = document.getElementById("btnEnviar");
+      btn.disabled = true;
+      btn.textContent = "Procesando...";
+
+      try {
+        const res = await fetch("http://localhost:3000/compras", { 
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        
+        if (res.ok) {
+          mostrarMensaje(`Compra registrada`, "exito");
+          items = [];
+          actualizarTabla();
+          proveedorSelect.value = "";
+        } else {
+          mostrarMensaje(data.error || "Error al guardar", "error");
+        }
+      } catch (err) {
+        console.error(err);
+        mostrarMensaje("Error de conexión", "error");
+      } finally {
+        btn.disabled = false;
+        btn.textContent = "Confirmar y Guardar Compra";
+      }
+    }
+
+    function mostrarMensaje(texto, tipo) {
+      const div = document.getElementById("mensaje");
+      div.textContent = texto;
+      div.className = `mensaje ${tipo}`;
+      div.style.display = "block";
+      setTimeout(() => div.style.display = "none", 6000);
+    }
+
+    cargarProveedores();
   </script>
 </body>
 </html>

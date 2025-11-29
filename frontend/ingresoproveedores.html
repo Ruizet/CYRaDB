@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Ingreso de Proveedores | Farmacia C&R</title>
+  <style>
+    body {
+      background: #f8f8f8;
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      background: #b23a48;
+      color: white;
+      padding: 1rem;
+      width: 100%;
+      text-align: center;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+
+    .container {
+      margin-top: 2rem;
+      background: white;
+      padding: 2rem;
+      border-radius: 12px;
+      width: 90%;
+      max-width: 600px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+    }
+
+    h2 {
+      color: #b23a48;
+      margin-bottom: 1.5rem;
+      text-align: center;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 0.5rem;
+      font-weight: bold;
+      color: #333;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.8rem;
+      margin-bottom: 1rem;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-size: 1rem;
+      box-sizing: border-box;
+    }
+
+    button {
+      background: #b23a48;
+      color: white;
+      border: none;
+      padding: 0.9rem 1.5rem;
+      font-size: 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      width: 100%;
+      font-weight: bold;
+      transition: background 0.3s;
+    }
+
+    button:hover {
+      background: #9b2d38;
+    }
+
+    .mensaje {
+      margin-top: 1rem;
+      padding: 0.8rem;
+      border-radius: 8px;
+      text-align: center;
+      font-weight: bold;
+    }
+
+    .exito {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .limpiar {
+      background: #6c757d;
+      margin-top: 0.5rem;
+    }
+
+    .limpiar:hover {
+      background: #5a6268;
+    }
+  </style>
+</head>
+<body>
+  <header>Ingreso de Proveedores</header>
+  <div class="container">
+    <h2>Nuevo Proveedor</h2>
+
+    <form id="formProveedor">
+      <label for="nombre">Nombre del Proveedor</label>
+      <input type="text" id="nombre" placeholder="Ej: Farmacéutica La Salud" required>
+
+      <label for="contacto">Contacto (Teléfono / Email)</label>
+      <input type="text" id="contacto" placeholder="Ej: 8555-1234 / farmacia@ejemplo.com" required>
+
+      <button type="submit">Guardar Proveedor</button>
+      <button type="button" class="limpiar" onclick="limpiarFormulario()">Limpiar Campos</button>
+    </form>
+
+    <div style="text-align: center;">
+      <a href="dashboard.html" class="btn-back">Volver al Dashboard</a>
+    </div>
+
+    <div id="mensaje"></div>
+  </div>
+
+  <script>
+    const form = document.getElementById("formProveedor");
+    const mensajeDiv = document.getElementById("mensaje");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const nombre = document.getElementById("nombre").value.trim();
+      const contacto = document.getElementById("contacto").value.trim();
+
+      if (!nombre || !contacto) {
+        mostrarMensaje("Todos los campos son obligatorios", "error");
+        return;
+      }
+
+      try {
+        const res = await fetch("http://localhost:3000/proveedores/nuevo", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nombre, contacto })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          mostrarMensaje(`Proveedor agregado con ID: ${data.idproveedor}`, "exito");
+          limpiarFormulario();
+        } else {
+          mostrarMensaje(data.error || "Error al guardar proveedor", "error");
+        }
+      } catch (err) {
+        console.error("Error de red:", err);
+        mostrarMensaje("Error de conexión. Verifica que el servidor esté corriendo.", "error");
+      }
+    });
+
+    function mostrarMensaje(texto, tipo) {
+      mensajeDiv.textContent = texto;
+      mensajeDiv.className = `mensaje ${tipo}`;
+      setTimeout(() => {
+        mensajeDiv.textContent = "";
+        mensajeDiv.className = "mensaje";
+      }, 5000);
+    }
+
+    function limpiarFormulario() {
+      document.getElementById("nombre").value = "";
+      document.getElementById("contacto").value = "";
+      mensajeDiv.textContent = "";
+      mensajeDiv.className = "mensaje";
+    }
+  </script>
+</body>
+</html>

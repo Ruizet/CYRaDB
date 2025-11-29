@@ -2,162 +2,306 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Facturación - Farmacia C&R</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Facturación | Farmacia C&R</title>
   <style>
-    body { font-family: Arial; background: #f9f9f9; text-align: center; padding: 20px; }
-    h2 { color: #b22222; }
-    #buscador { width: 60%; padding: 8px; margin-bottom: 15px; border-radius: 6px; }
-    table { margin: 0 auto; border-collapse: collapse; width: 90%; max-width: 900px; background: white; }
-    th, td { border: 1px solid #ccc; padding: 10px; text-align: center; }
-    th { background: #ffe5e5; color: #b22222; }
-    tr:nth-child(even) { background: #f5f5f5; }
-    button { background: #b22222; color: white; border: none; padding: 6px 12px; border-radius: 5px; cursor: pointer; }
-    button:hover { background: #d33; }
-    .resumen { margin-top: 20px; }
+    :root { --primary: #b23a48; --primary-dark: #9b2d38; --success: #28a745; --danger: #dc3545; --warning: #ffc107; --light: #f8f9fa; --gray: #6c757d; --border: #dee2e6; --shadow: 0 8px 25px rgba(0, 0, 0, 0.12); --radius: 14px; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%); font-family: 'Segoe UI', sans-serif; min-height: 100vh; padding: 1.5rem; color: #333; }
+    .container { max-width: 1100px; margin: 0 auto; }
+    header { text-align: center; margin-bottom: 2rem; }
+    header h1 { color: var(--primary); font-size: 2.2rem; font-weight: 700; margin-bottom: 0.5rem; }
+    header p { color: #666; font-size: 1rem; }
+    .search-box { position: relative; max-width: 600px; margin: 0 auto 2rem; }
+    #buscador { width: 100%; padding: 1rem 1.2rem; font-size: 1.1rem; border: 2px solid var(--border); border-radius: var(--radius); background: white; transition: all 0.3s; }
+    #buscador:focus { outline: none; border-color: var(--primary); box-shadow: 0 0 0 4px rgba(178, 58, 72, 0.15); }
+    .table-search { background: white; border-radius: var(--radius); overflow: hidden; box-shadow: var(--shadow); margin-bottom: 2rem; display: none; }
+    .table-search table { width: 100%; border-collapse: collapse; }
+    .table-search th { background: linear-gradient(135deg, #ffe5e5, #ffd1d1); color: var(--primary); padding: 1rem; text-align: center; font-weight: 600; font-size: 0.95rem; text-transform: uppercase; }
+    .table-search td { padding: 1rem; text-align: center; border-bottom: 1px solid #eee; }
+    .table-search tr:hover { background: #fdf2f2; }
+    .input-cant { width: 70px; padding: 0.5rem; border: 1.5px solid var(--border); border-radius: 8px; text-align: center; }
+    .btn-add { background: var(--success); color: white; border: none; padding: 0.5rem 0.8rem; border-radius: 8px; cursor: pointer; font-weight: bold; transition: all 0.2s; }
+    .btn-add:hover { background: #218838; transform: scale(1.05); }
+    .factura-card { background: white; border-radius: var(--radius); padding: 1.5rem; box-shadow: var(--shadow); margin-bottom: 1.5rem; }
+    .factura-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding-bottom: 0.8rem; border-bottom: 2px dashed #eee; }
+    .factura-header h3 { color: var(--primary); font-size: 1.4rem; }
+    .factura-total { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+    #tablaFactura { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+    #tablaFactura th { background: #f8f9fa; color: #555; padding: 0.8rem; font-weight: 600; }
+    #tablaFactura td { padding: 0.8rem; border-bottom: 1px solid #eee; }
+    .btn-remove { background: var(--danger); color: white; border: none; padding: 0.4rem 0.7rem; border-radius: 6px; cursor: pointer; font-size: 0.9rem; }
+    .btn-remove:hover { background: #c82333; }
+    .pago-section { display: flex; flex-direction: column; align-items: center; gap: 1rem; margin-top: 1.5rem; }
+    .select-pago { padding: 0.8rem 1.2rem; font-size: 1rem; border: 2px solid var(--border); border-radius: 10px; background: white; width: 100%; max-width: 300px; }
+    .btn-confirm { background: var(--primary); color: white; border: none; padding: 1rem 2rem; font-size: 1.1rem; font-weight: 600; border-radius: 12px; cursor: pointer; width: 100%; max-width: 300px; transition: all 0.3s; box-shadow: 0 6px 16px rgba(178, 58, 72, 0.3); }
+    .btn-confirm:hover { background: var(--primary-dark); transform: translateY(-2px); }
+    .btn-confirm:disabled { background: #ccc; cursor: not-allowed; transform: none; }
+    .btn-back { display: inline-block; margin-top: 2rem; padding: 0.8rem 1.8rem; background: var(--gray); color: white; text-decoration: none; border-radius: 10px; font-weight: 600; box-shadow: 0 4px 12px rgba(108, 117, 125, 0.3); }
+    .btn-back:hover { background: #5a6268; }
+    .mensaje { margin: 1rem 0; padding: 1rem; border-radius: 10px; text-align: center; font-weight: 600; display: none; }
+    .exito { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    @media (max-width: 768px) { .factura-header { flex-direction: column; text-align: center; gap: 0.5rem; } .pago-section { width: 100%; } }
   </style>
 </head>
 <body>
-  <h2>🧾 Facturación - Farmacia C&R</h2>
+  <div class="container">
+    <header>
+      <h1>Facturación (Ventas)</h1>
+      <p>Punto de Venta</p>
+    </header>
 
-  <input type="text" id="buscador" placeholder="Buscar medicamento...">
-  <table id="tablaMedicamentos">
-    <thead>
-      <tr>
-        <th>Nombre</th>
-        <th>Presentación</th>
-        <th>Stock</th>
-        <th>Precio Unitario</th>
-        <th>Cantidad</th>
-        <th>Acción</th>
-      </tr>
-    </thead>
-    <tbody></tbody>
-  </table>
+    <div class="search-box">
+      <input type="text" id="buscador" placeholder="Busca un medicamento (Nombre o ID) y presiona Enter...">
+    </div>
 
-  <div class="resumen">
-    <h3>Factura</h3>
-    <table id="tablaFactura">
-      <thead>
-        <tr>
-          <th>Medicamento</th>
-          <th>Cantidad</th>
-          <th>Subtotal</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-    <h3>Total: C$ <span id="total">0.00</span></h3>
+    <div class="table-search" id="tablaResultados">
+      <table>
+        <thead>
+          <tr>
+            <th>Medicamento</th>
+            <th>Presentación</th>
+            <th>Stock Total</th>
+            <th>Precio Venta</th>
+            <th>Cantidad</th>
+            <th>Acción</th>
+          </tr>
+        </thead>
+        <tbody id="resultadosBody"></tbody>
+      </table>
+    </div>
 
-    <label for="mediopago">Método de pago:</label>
-    <select id="mediopago">
-      <option value="efectivo">Efectivo</option>
-      <option value="tarjeta">Tarjeta</option>
-    </select>
-    <br><br>
-    <button onclick="confirmarVenta()">✅ Confirmar Venta</button>
+    <div class="factura-card">
+      <div class="factura-header">
+        <h3>Resumen de Venta</h3>
+        <div class="factura-total">Total: C$ <span id="total">0.00</span></div>
+      </div>
+
+      <table id="tablaFactura">
+        <thead>
+          <tr>
+            <th>Medicamento</th>
+            <th>Cant.</th>
+            <th>Precio</th>
+            <th>Subtotal</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="facturaBody"></tbody>
+      </table>
+
+      <div class="mensaje" id="mensaje"></div>
+
+      <div class="pago-section">
+        <label>Forma de Pago:</label>
+        <select id="mediopago" class="select-pago">
+          <option value="efectivo">Efectivo</option>
+          <option value="tarjeta">Tarjeta</option>
+          <option value="transferencia">Transferencia</option>
+        </select>
+
+        <button class="btn-confirm" id="btnConfirmar" onclick="confirmarVenta()">
+          Confirmar Venta
+        </button>
+      </div>
+    </div>
+
+    <div style="text-align: center;">
+      <a href="dashboard.html" class="btn-back">Volver al Dashboard</a>
+    </div>
   </div>
 
   <script>
-    let medicamentos = [];
+    // --- SESIÓN ---
+    const usuarioJSON = localStorage.getItem("usuarioActual");
+    if (!usuarioJSON) {
+        alert("Debes iniciar sesión.");
+        window.location.href = "login.html";
+        throw new Error("Sin sesión");
+    }
+    const usuarioSesion = JSON.parse(usuarioJSON);
+    // --------------
+
     let factura = [];
+    const resultadosBody = document.getElementById("resultadosBody");
+    const facturaBody = document.getElementById("facturaBody");
+    const totalSpan = document.getElementById("total");
+    const tablaResultados = document.getElementById("tablaResultados");
+    const mensaje = document.getElementById("mensaje");
+    const btnConfirmar = document.getElementById("btnConfirmar");
 
-    async function cargarMedicamentos(){
-      const res = await fetch("http://localhost:3000/inventario");
-      medicamentos = await res.json();
-      mostrarMedicamentos(medicamentos);
+    function mostrarMensaje(texto, tipo) {
+      mensaje.textContent = texto;
+      mensaje.className = `mensaje ${tipo}`;
+      mensaje.style.display = "block";
+      setTimeout(() => mensaje.style.display = "none", 4000);
     }
 
-    function mostrarMedicamentos(lista){
-      const cuerpo = document.querySelector("#tablaMedicamentos tbody");
-      cuerpo.innerHTML = "";
-      lista.forEach(med => {
-        const stockTotal = med.cantidadpaquetes * med.cantidaditems;
-        const fila = document.createElement("tr");
-        fila.innerHTML = `
-          <td>${med.nombremedicamento}</td>
-          <td>${med.presentacion}</td>
-          <td>${stockTotal}</td>
-          <td>C$ ${parseFloat(med.preciounitario).toFixed(2)}</td>
-          <td><input type="number" min="1" max="${stockTotal}" value="1" id="cant-${med.idmedicamento}"></td>
-          <td><button onclick="agregarFactura(${med.idmedicamento})">➕</button></td>
-        `;
-        cuerpo.appendChild(fila);
-      });
-    }
-
-    function agregarFactura(id){
-      const med = medicamentos.find(m => m.idmedicamento === id);
-      const cant = parseInt(document.getElementById(`cant-${id}`).value);
-      if(cant > med.cantidadpaquetes * med.cantidaditems){
-        alert("❌ Stock insuficiente");
+    function mostrarResultados(lista) {
+      resultadosBody.innerHTML = "";
+      if (lista.length === 0) {
+        tablaResultados.style.display = "none";
         return;
       }
 
-      const subtotal = cant * med.preciounitario;
-      factura.push({ idmedicamento: id, nombre: med.nombremedicamento, cantidad: cant, subtotal });
+      tablaResultados.style.display = "block";
+      
+      lista.forEach(med => {
+        // AHORA USAMOS LAS COLUMNAS CORRECTAS DE LA NUEVA BD
+        const stockReal = med.cantidadlote; 
+        const precioVenta = parseFloat(med.precioventa);
 
+        // Si no hay stock, no mostramos el botón o avisamos
+        if (stockReal <= 0) return; 
+
+        const fila = document.createElement("tr");
+        fila.innerHTML = `
+          <td><strong>${med.nombremedicamento}</strong></td>
+          <td>${med.presentacion}</td>
+          <td style="color:${stockReal < 10 ? 'red' : 'green'}; font-weight:bold;">${stockReal}</td>
+          <td>C$ ${precioVenta.toFixed(2)}</td>
+          <td>
+            <input type="number" min="1" max="${stockReal}" value="1" 
+                   class="input-cant" id="cant-${med.idmedicamento}">
+          </td>
+          <td>
+            <button class="btn-add" onclick="agregarFactura(${med.idmedicamento}, '${med.nombremedicamento}', ${precioVenta}, ${stockReal})">
+              + Agregar
+            </button>
+          </td>
+        `;
+        resultadosBody.appendChild(fila);
+      });
+    }
+
+    async function buscarMedicamentos(texto) {
+      if (!texto.trim()) return;
+      try {
+        const res = await fetch(`http://localhost:3000/inventario/buscar?nombre=${encodeURIComponent(texto)}`);
+        if (!res.ok) throw new Error("Error en búsqueda");
+        const data = await res.json();
+        mostrarResultados(data);
+      } catch (err) {
+        console.error(err);
+        mostrarMensaje("Error al buscar medicamentos", "error");
+      }
+    }
+
+    function agregarFactura(id, nombre, precio, stockMax) {
+      const input = document.getElementById(`cant-${id}`);
+      const cant = parseInt(input.value);
+
+      if (cant < 1) return mostrarMensaje("Cantidad inválida", "error");
+      if (cant > stockMax) return mostrarMensaje("No hay suficiente stock", "error");
+
+      const existente = factura.find(f => f.idmedicamento === id);
+      
+      if (existente) {
+        if (existente.cantidad + cant > stockMax) {
+          mostrarMensaje("Stock insuficiente para agregar más", "error");
+          return;
+        }
+        existente.cantidad += cant;
+        existente.subtotal = existente.cantidad * precio;
+      } else {
+        factura.push({
+          idmedicamento: id,
+          nombre,
+          cantidad: cant,
+          precio,
+          subtotal: cant * precio
+        });
+      }
+
+      actualizarFactura();
+      input.value = 1; // Reset input
+    }
+
+    function eliminarDeFactura(index) {
+      factura.splice(index, 1);
       actualizarFactura();
     }
 
-    function actualizarFactura(){
-      const cuerpo = document.querySelector("#tablaFactura tbody");
-      cuerpo.innerHTML = "";
+    function actualizarFactura() {
+      facturaBody.innerHTML = "";
       let total = 0;
-      factura.forEach(item => {
+
+      factura.forEach((item, i) => {
         total += item.subtotal;
         const fila = document.createElement("tr");
         fila.innerHTML = `
           <td>${item.nombre}</td>
           <td>${item.cantidad}</td>
+          <td>C$ ${item.precio.toFixed(2)}</td>
           <td>C$ ${item.subtotal.toFixed(2)}</td>
+          <td>
+            <button class="btn-remove" onclick="eliminarDeFactura(${i})">X</button>
+          </td>
         `;
-        cuerpo.appendChild(fila);
-      });
-      document.getElementById("total").textContent = total.toFixed(2);
-    }
-
-    async function confirmarVenta(){
-      if(factura.length === 0){
-        alert("❌ No hay medicamentos en la factura");
-        return;
-      }
-
-      const usuarioActual = JSON.parse(localStorage.getItem("usuarioActual"));
-      if(!usuarioActual){
-        alert("❌ Sesión inválida, vuelve a iniciar sesión");
-        return;
-      }
-
-      const mediopago = document.getElementById("mediopago").value;
-
-      const res = await fetch("http://localhost:3000/ventas", {
-        method: "POST",
-        headers: { "Content-Type":"application/json" },
-        body: JSON.stringify({
-          idusuario: usuarioActual.idusuario,  // 👈 ahora se usa el usuario logueado
-          items: factura.map(f => ({ idmedicamento: f.idmedicamento, cantidad: f.cantidad })),
-          mediopago
-        })
+        facturaBody.appendChild(fila);
       });
 
-      if(res.ok){
-        alert("✅ Venta registrada con éxito");
-        factura = [];
-        actualizarFactura();
-        cargarMedicamentos();
-      } else {
-        alert("❌ Error al registrar venta");
+      totalSpan.textContent = total.toFixed(2);
+      btnConfirmar.disabled = factura.length === 0;
+    }
+
+    async function confirmarVenta() {
+      if (factura.length === 0) return mostrarMensaje("El carrito está vacío", "error");
+
+      btnConfirmar.disabled = true;
+      btnConfirmar.textContent = "Procesando...";
+
+      try {
+        const res = await fetch("http://localhost:3000/ventas", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            idusuario: usuarioSesion.idusuario, // USAMOS LA SESIÓN REAL
+            items: factura.map(f => ({ 
+                idmedicamento: f.idmedicamento, 
+                cantidad: f.cantidad 
+            })),
+            mediopago: document.getElementById("mediopago").value
+          })
+        });
+
+        if (res.ok) {
+          mostrarMensaje("¡Venta Exitosa!", "exito");
+          factura = [];
+          actualizarFactura();
+          tablaResultados.style.display = "none";
+          document.getElementById("buscador").value = "";
+          document.getElementById("buscador").focus();
+        } else {
+          const err = await res.json();
+          mostrarMensaje(err.error || "Error al registrar venta", "error");
+        }
+      } catch (err) {
+        console.error(err);
+        mostrarMensaje("Error de conexión", "error");
+      } finally {
+        btnConfirmar.disabled = false;
+        btnConfirmar.textContent = "Confirmar Venta";
       }
     }
 
-
-    document.getElementById("buscador").addEventListener("keyup", (e)=>{
-      const texto = e.target.value.toLowerCase();
-      const filtrados = medicamentos.filter(m => m.nombremedicamento.toLowerCase().includes(texto));
-      mostrarMedicamentos(filtrados);
+    document.getElementById("buscador").addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        buscarMedicamentos(e.target.value.trim());
+      }
     });
 
-    cargarMedicamentos();
+    let timeout;
+    document.getElementById("buscador").addEventListener("input", e => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => {
+        if (e.target.value.trim().length >= 3) {
+          buscarMedicamentos(e.target.value.trim());
+        }
+      }, 500);
+    });
   </script>
 </body>
 </html>

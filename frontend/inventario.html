@@ -2,146 +2,217 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Inventario - Farmacia C&R</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Inventario | Farmacia C&R</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f9f9f9;
-      text-align: center;
-      padding: 20px;
+    :root {
+      --primary: #b23a48;
+      --primary-dark: #9b2d38;
+      --success: #28a745;
+      --danger: #dc3545;
+      --warning: #ffc107;
+      --light: #f8f9fa;
+      --gray: #6c757d;
+      --border: #dee2e6;
+      --shadow: 0 4px 12px rgba(0,0,0,0.08);
     }
 
-    h2 {
-      color: #b22222;
-      margin-bottom: 20px;
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
+      padding: 2rem;
     }
+
+    .container { max-width: 1200px; margin: 0 auto; }
+
+    header { text-align: center; margin-bottom: 2rem; }
+    header h1 { color: var(--primary); font-size: 2rem; font-weight: 700; }
+
+    .search-container { position: relative; max-width: 600px; margin: 0 auto 2rem; }
 
     #buscador {
-      margin-bottom: 20px;
-      padding: 8px;
-      width: 60%;
-      font-size: 16px;
-      border: 1px solid #ccc;
-      border-radius: 6px;
+      width: 100%; padding: 1rem 1.2rem; font-size: 1.1rem;
+      border: 2px solid var(--border); border-radius: 12px; transition: all 0.3s;
+      background: white;
     }
 
-    table {
-      margin: 0 auto;
-      border-collapse: collapse;
-      width: 90%;
-      max-width: 1200px;
-      background-color: #fff;
-      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    #buscador:focus {
+      outline: none; border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(178, 58, 72, 0.15);
     }
 
-    th, td {
-      border: 1px solid #ccc;
-      padding: 10px;
-      text-align: center;
+    .table-container {
+      background: white; border-radius: 16px; overflow: hidden;
+      box-shadow: var(--shadow); display: none; /* Se oculta si no hay datos */
     }
+
+    table { width: 100%; border-collapse: collapse; }
 
     th {
-      background-color: #ffe5e5;
-      color: #b22222;
+      background: linear-gradient(135deg, #ffe5e5, #ffd1d1);
+      color: var(--primary); padding: 1rem; text-align: center;
+      font-weight: 600; font-size: 0.95rem; text-transform: uppercase;
+      letter-spacing: 0.5px;
     }
 
-    tr:nth-child(even) {
-      background-color: #f5f5f5;
+    td {
+      padding: 1rem; text-align: center; border-bottom: 1px solid #eee; font-size: 0.95rem;
     }
 
-    button {
-      background-color: #b22222;
-      color: white;
-      border: none;
-      padding: 5px 10px;
-      border-radius: 6px;
-      cursor: pointer;
+    tr:hover { background-color: #fdf2f2; }
+
+    .stock-ok { color: var(--success); font-weight: bold; }
+    .stock-low { color: var(--danger); font-weight: bold; }
+    .vence-pronto { color: #d63031; font-weight: bold; background: #fab1a0; padding: 2px 6px; border-radius: 4px; }
+
+    .btn-back {
+      display: inline-block; margin-top: 1.5rem; padding: 0.8rem 1.8rem;
+      background: var(--primary); color: white; text-decoration: none;
+      border-radius: 10px; font-weight: 600; transition: all 0.3s;
+      box-shadow: 0 4px 12px rgba(178, 58, 72, 0.3);
     }
 
-    button:hover {
-      background-color: #d33;
-    }
+    .btn-back:hover { background: var(--primary-dark); transform: translateY(-2px); }
+
+    .empty-state { text-align: center; padding: 3rem; color: #888; font-size: 1.1rem; }
+    .empty-state p { margin-top: 0.5rem; color: #aaa; }
   </style>
 </head>
 <body>
-  <h2>📦 Inventario - Farmacia C&R</h2>
+  <div class="container">
+    <header>
+      <h1>Inventario Actual</h1>
+    </header>
 
-  <input type="text" id="buscador" placeholder="Buscar medicamento por nombre...">
+    <div class="search-container">
+      <input type="text" id="buscador" placeholder="Buscar por nombre o ID del medicamento...">
+    </div>
 
-  <table id="tablaInventario">
-    <thead>
-      <tr>
-        <th>ID</th>
-        <th>Nombre</th>
-        <th>Presentación</th>
-        <th>Paquetes</th>
-        <th>Unidades/Paquete</th>
-        <th>Stock Total</th>
-        <th>Precio Unitario</th>
-        <th>Fecha Ingreso</th>
-        <th>Fecha Vencimiento</th>
-        <th>Acciones</th>
-      </tr>
-    </thead>
-    <tbody>
-      <!-- Aquí van los medicamentos -->
-    </tbody>
-  </table>
+    <div class="table-container" id="tablaContainer">
+      <table id="tablaInventario">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Medicamento</th>
+            <th>Presentación</th>
+            <th>Ubicación</th> <th>Stock Disponible</th> <th>Precio Venta</th> <th>Vencimiento</th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+      </table>
+    </div>
+
+    <div id="emptyState" class="empty-state">
+      <div>Cargando inventario...</div>
+    </div>
+
+    <div style="text-align: center;">
+      <a href="dashboard.html" class="btn-back">Volver al Dashboard</a>
+    </div>
+  </div>
 
   <script>
-    async function cargarInventario(){
-      try {
-        const res = await fetch("http://localhost:3000/inventario");
-        const data = await res.json();
-        const cuerpo = document.querySelector("#tablaInventario tbody");
-        cuerpo.innerHTML = "";
+    const tablaContainer = document.getElementById("tablaContainer");
+    const tbody = document.getElementById("tbody");
+    const buscador = document.getElementById("buscador");
+    const emptyState = document.getElementById("emptyState");
 
-        data.forEach(med => {
-          const fila = document.createElement("tr");
-          fila.innerHTML = `
-            <td>${med.idmedicamento}</td>
-            <td>${med.nombremedicamento}</td>
-            <td>${med.presentacion}</td>
-            <td>${med.cantidadpaquetes}</td>
-            <td>${med.cantidaditems}</td>
-            <td>${med.cantidadpaquetes * med.cantidaditems}</td>
-            <td>${parseFloat(med.preciounitario).toFixed(2)}</td>
-            <td>${new Date(med.fechaingreso).toLocaleDateString()}</td>
-            <td>${new Date(med.fechavencimiento).toLocaleDateString()}</td>
-            <td><button onclick="eliminar(${med.idmedicamento})">🗑️</button></td>
-          `;
-          cuerpo.appendChild(fila);
-        });
-      } catch (err) {
-        console.error("Error cargando inventario:", err);
-      }
+    // Función para formatear fecha visualmente
+    function formatearFecha(fechaString) {
+      if (!fechaString) return "—";
+      const fecha = new Date(fechaString);
+      return fecha.toLocaleDateString('es-NI'); // Formato local
     }
 
-    async function eliminar(id){
-      if(confirm("¿Seguro que deseas eliminar este medicamento?")){
-        const res = await fetch(`http://localhost:3000/inventario/${id}`, { method: 'DELETE' });
-        if(res.ok){
-          alert("✅ Medicamento eliminado");
-          cargarInventario();
-        } else {
-          alert("❌ Error al eliminar");
-        }
-      }
+    // Alerta visual si vence en menos de 30 días
+    function verificarVencimiento(fechaString) {
+      const hoy = new Date();
+      const vencimiento = new Date(fechaString);
+      const diferenciaDias = (vencimiento - hoy) / (1000 * 60 * 60 * 24);
+      
+      if (diferenciaDias < 0) return '<span class="vence-pronto">VENCIDO</span>';
+      if (diferenciaDias < 60) return `<span class="vence-pronto">${formatearFecha(fechaString)}</span>`; // Alerta si faltan 2 meses
+      return formatearFecha(fechaString);
     }
 
-    function filtrarTabla(){
-      const texto = document.getElementById('buscador').value.toLowerCase();
-      const filas = document.querySelectorAll("#tablaInventario tbody tr");
+    function mostrarMedicamentos(data) {
+      tbody.innerHTML = "";
+      
+      // Filtramos solo los que tienen cantidadlote > 0
+      const conStock = data.filter(med => med.cantidadlote > 0);
 
-      filas.forEach(fila => {
-        const nombre = fila.cells[1].textContent.toLowerCase(); 
-        fila.style.display = nombre.includes(texto) ? "" : "none";
+      if (conStock.length === 0) {
+        tablaContainer.style.display = "none";
+        emptyState.innerHTML = "<div>No se encontraron medicamentos en stock.</div>";
+        emptyState.style.display = "block";
+        return;
+      }
+
+      tablaContainer.style.display = "block";
+      emptyState.style.display = "none";
+
+      conStock.forEach(med => {
+        const fila = document.createElement("tr");
+        
+        // Determinar clase para stock bajo
+        const claseStock = med.cantidadlote < 10 ? 'stock-low' : 'stock-ok';
+
+        fila.innerHTML = `
+          <td><strong>#${med.idmedicamento}</strong></td>
+          <td style="text-align:left; padding-left:2rem;">
+            <strong>${med.nombremedicamento}</strong>
+          </td>
+          <td>${med.presentacion}</td>
+          <td>${med.ubicacion_estante || '—'}</td>
+          <td class="${claseStock}">${med.cantidadlote} Unid.</td>
+          <td>C$ ${parseFloat(med.precioventa).toFixed(2)}</td>
+          <td>${verificarVencimiento(med.fechavencimiento)}</td>
+        `;
+        tbody.appendChild(fila);
       });
     }
 
-    document.getElementById('buscador').addEventListener("keyup", filtrarTabla);
+    async function buscar(texto) {
+      texto = texto.trim();
+      let url = "http://localhost:3000/inventario"; // URL Base del backend
 
-    cargarInventario();
+      // Si hay texto, usamos la ruta de búsqueda
+      if (texto) {
+        url = `http://localhost:3000/inventario/buscar?nombre=${encodeURIComponent(texto)}`;
+      }
+
+      try {
+        const res = await fetch(url);
+        if (!res.ok) throw new Error("Error en servidor");
+        const data = await res.json();
+        mostrarMedicamentos(data);
+      } catch (err) {
+        console.error("Error:", err);
+        tablaContainer.style.display = "none";
+        emptyState.innerHTML = "<div>Error de conexión con la base de datos.</div>";
+        emptyState.style.display = "block";
+      }
+    }
+
+    // Eventos del buscador
+    buscador.addEventListener("keydown", e => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        buscar(e.target.value);
+      }
+    });
+
+    let timeout;
+    buscador.addEventListener("input", e => {
+      clearTimeout(timeout);
+      timeout = setTimeout(() => buscar(e.target.value), 400); // Debounce de 400ms
+    });
+
+    // Cargar todo al inicio
+    buscar(""); 
   </script>
 </body>
 </html>

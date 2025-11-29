@@ -2,96 +2,332 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Login | Farmacia C&R</title>
-  <link rel="stylesheet" href="styles.css">
   <style>
+    :root {
+      --primary: #b23a48;
+      --primary-dark: #9b2d38;
+      --success: #28a745;
+      --danger: #dc3545;
+      --light: #f8f9fa;
+      --gray: #6c757d;
+      --border: #dee2e6;
+      --shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
+      --radius: 16px;
+      --transition: all 0.3s ease;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
     body {
-      background: #f8f8f8;
-      font-family: Arial, sans-serif;
+      background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      min-height: 100vh;
       display: flex;
       align-items: center;
       justify-content: center;
-      height: 100vh;
-      margin: 0;
+      padding: 1rem;
+      color: #333;
+    }
+
+    .login-container {
+      width: 100%;
+      max-width: 400px;
     }
 
     .login-card {
-      background: #fff;
-      padding: 2rem;
+      background: white;
+      padding: 2.5rem;
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .logo {
+      margin-bottom: 1.8rem;
+    }
+
+    .logo h1 {
+      color: var(--primary);
+      font-size: 2rem;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+    }
+
+    .logo p {
+      color: #888;
+      font-size: 0.95rem;
+      margin-top: 0.3rem;
+    }
+
+    .form-group {
+      margin-bottom: 1.3rem;
+      position: relative;
+    }
+
+    label {
+      display: block;
+      text-align: left;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+      color: #444;
+      font-size: 0.95rem;
+    }
+
+    input {
+      width: 100%;
+      padding: 0.95rem 1rem;
+      font-size: 1rem;
+      border: 2px solid var(--border);
       border-radius: 12px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-      width: 350px;
+      background: #fdfdfd;
+      transition: var(--transition);
+    }
+
+    input:focus {
+      outline: none;
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(178, 58, 72, 0.15);
+    }
+
+    input::placeholder {
+      color: #aaa;
+    }
+
+    .btn-login {
+      width: 100%;
+      padding: 1rem;
+      background: var(--primary);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      font-size: 1.05rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 0.5rem;
+      transition: var(--transition);
+      box-shadow: 0 6px 16px rgba(178, 58, 72, 0.3);
+    }
+
+    .btn-login:hover {
+      background: var(--primary-dark);
+      transform: translateY(-2px);
+    }
+
+    .btn-login:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .mensaje {
+      margin-top: 1rem;
+      padding: 0.9rem;
+      border-radius: 10px;
+      font-weight: 600;
+      font-size: 0.95rem;
+      display: none;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .exito {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .loading {
+      opacity: 0.7;
+      pointer-events: none;
+    }
+
+    .loading .btn-login::after {
+      content: "";
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid #fff;
+      border-radius: 50%;
+      border-top-color: transparent;
+      animation: spin 0.8s linear infinite;
+      margin-left: 10px;
+    }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; }
+      to { opacity: 1; }
+    }
+
+    .footer {
+      margin-top: 2rem;
+      font-size: 0.85rem;
+      color: #aaa;
       text-align: center;
     }
 
-    .login-card h1 {
-      margin-bottom: 1.5rem;
-      color: #b23a48; /* rojo suave */
+    .footer a {
+      color: var(--primary);
+      text-decoration: none;
     }
 
-    .login-card input {
-      width: 100%;
-      padding: 0.8rem;
-      margin-bottom: 1rem;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-      font-size: 14px;
+    .footer a:hover {
+      text-decoration: underline;
     }
 
-    .login-card button {
-      width: 100%;
-      padding: 0.8rem;
-      background: #b23a48;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-size: 15px;
-      cursor: pointer;
-      transition: background 0.2s;
-    }
-
-    .login-card button:hover {
-      background: #922d3a;
-    }
-
-    .login-footer {
-      margin-top: 1rem;
-      font-size: 12px;
-      color: #555;
+    @media (max-width: 480px) {
+      .login-card {
+        padding: 2rem 1.5rem;
+      }
+      .logo h1 {
+        font-size: 1.8rem;
+      }
     }
   </style>
 </head>
 <body>
-  <div class="login-card">
-    <h1>Farmacia C&R</h1>
-    <input type="text" id="usuario" placeholder="Usuario">
-    <input type="password" id="contrasena" placeholder="Contraseña">
-    <button onclick="login()">Ingresar</button>
-    <div class="login-footer">
-      © 2025 Farmacia C&R
+  <div class="login-container">
+    <div class="login-card">
+      <div class="logo">
+        <h1>Farmacia C&R</h1>
+        <p>Sistema de Gestión</p>
+      </div>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label for="usuario">Usuario</label>
+          <input 
+            type="text" 
+            id="usuario" 
+            placeholder="Ingresa tu usuario" 
+            autocomplete="username"
+            required
+            tabindex="1"
+          >
+        </div>
+
+        <div class="form-group">
+          <label for="contrasena">Contraseña</label>
+          <input 
+            type="password" 
+            id="contrasena" 
+            placeholder="Ingresa tu contraseña" 
+            autocomplete="current-password"
+            required
+            tabindex="2"
+          >
+        </div>
+
+        <button type="submit" class="btn-login" id="btnLogin">
+          Ingresar
+        </button>
+      </form>
+
+      <div id="mensaje" class="mensaje"></div>
+
     </div>
   </div>
 
   <script>
-    async function login(){
-      const usuario = document.getElementById("usuario").value;
-      const contrasena = document.getElementById("contrasena").value;
+    const form = document.getElementById("loginForm");
+    const usuarioInput = document.getElementById("usuario");
+    const contrasenaInput = document.getElementById("contrasena");
+    const btnLogin = document.getElementById("btnLogin");
+    const mensaje = document.getElementById("mensaje");
 
-     const res = await fetch("http://localhost:3000/usuarios/login", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ usuario, contrasena })
+    const inputs = [usuarioInput, contrasenaInput];
+
+    inputs.forEach((input, index) => {
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "ArrowDown") {
+          e.preventDefault();
+          const next = inputs[index + 1];
+          if (next) next.focus();
+        }
+        if (e.key === "ArrowUp") {
+          e.preventDefault();
+          const prev = inputs[index - 1];
+          if (prev) prev.focus();
+        }
       });
+    });
 
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      await login();
+    });
 
-      const data = await res.json();
-      if(res.ok){
-        localStorage.setItem("usuarioActual", JSON.stringify(data)); 
-        window.location.href = "dashboard.html";
-      } else {
-        alert("❌ Usuario o contraseña incorrectos");
+    async function login() {
+      const usuario = usuarioInput.value.trim();
+      const contrasena = contrasenaInput.value;
+
+      if (!usuario || !contrasena) {
+        mostrarMensaje("Completa ambos campos", "error");
+        return;
+      }
+
+      btnLogin.disabled = true;
+      btnLogin.textContent = "Ingresando";
+      document.querySelector(".login-card").classList.add("loading");
+      ocultarMensaje();
+
+      try {
+        const res = await fetch("http://localhost:3000/usuarios/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ usuario, contrasena })
+        });
+
+        const data = await res.json();
+
+        if (res.ok) {
+          localStorage.setItem("usuarioActual", JSON.stringify(data));
+          mostrarMensaje("Bienvenido", "exito");
+          setTimeout(() => {
+            window.location.href = "dashboard.html";
+          }, 800);
+        } else {
+          mostrarMensaje(data.error || "Usuario o contraseña incorrectos", "error");
+        }
+      } catch (err) {
+        console.error("Error de conexión:", err);
+        mostrarMensaje("Error de conexión. Intenta de nuevo.", "error");
+      } finally {
+        btnLogin.disabled = false;
+        btnLogin.textContent = "Ingresar";
+        document.querySelector(".login-card").classList.remove("loading");
       }
     }
+
+    function mostrarMensaje(texto, tipo) {
+      mensaje.textContent = texto;
+      mensaje.className = `mensaje ${tipo}`;
+      mensaje.style.display = "block";
+    }
+
+    function ocultarMensaje() {
+      mensaje.style.display = "none";
+    }
+
+    window.addEventListener("load", () => {
+      usuarioInput.focus();
+    });
   </script>
 </body>
 </html>

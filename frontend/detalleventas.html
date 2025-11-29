@@ -3,115 +3,137 @@
 <head>
   <meta charset="UTF-8">
   <title>Detalle de Ventas | Farmacia C&R</title>
-  <link rel="stylesheet" href="styles.css">
   <style>
-    body {
-      background: #f8f8f8;
-      font-family: Arial, sans-serif;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+    body { background: #f8f8f8; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; }
+    header { background: #b23a48; color: white; padding: 1rem; width: 100%; text-align: center; font-size: 1.5rem; font-weight: bold; }
+    
+    /* Contenedor más ancho para que quepa el detalle */
+    .container { margin-top: 2rem; background: white; padding: 2rem; border-radius: 12px; width: 95%; max-width: 1200px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
+    
+    h2 { color: #b23a48; margin-bottom: 1rem; }
+    input { width: 100%; padding: 0.8rem; margin-bottom: 1rem; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; }
+    
+    table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.95rem; }
+    table th, table td { padding: 0.8rem; border: 1px solid #ddd; text-align: left; vertical-align: top; }
+    table th { background: #f3d0d3; color: #b23a48; text-align: center; }
+    
+    /* Estilos para la lista de productos dentro de la celda */
+    .lista-meds { list-style: none; padding: 0; margin: 0; font-size: 0.85rem; color: #555; }
+    .lista-meds li { 
+      margin-bottom: 4px; 
+      border-bottom: 1px dashed #eee; 
+      padding-bottom: 2px; 
+      display: flex; 
+      justify-content: space-between; /* Separa nombre y subtotal */
     }
+    .lista-meds li:last-child { border-bottom: none; }
+    .badge-cant { background: #e9ecef; padding: 1px 6px; border-radius: 4px; font-weight: bold; color: #333; font-size: 0.8rem; margin-left: 5px; }
 
-    header {
-      background: #b23a48;
-      color: white;
-      padding: 1rem;
-      width: 100%;
-      text-align: center;
-      font-size: 1.5rem;
-      font-weight: bold;
-    }
-
-    .container {
-      margin-top: 2rem;
-      background: white;
-      padding: 2rem;
-      border-radius: 12px;
-      width: 90%;
-      max-width: 1000px;
-      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-    }
-
-    h2 {
-      color: #b23a48;
-      margin-bottom: 1rem;
-    }
-
-    input {
-      width: 100%;
-      padding: 0.8rem;
-      margin-bottom: 1rem;
-      border: 1px solid #ddd;
-      border-radius: 8px;
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 1rem;
-    }
-
-    table th, table td {
-      padding: 0.8rem;
-      border: 1px solid #ddd;
-      text-align: center;
-    }
-
-    table th {
-      background: #f3d0d3;
-      color: #333;
-    }
+    tr:nth-child(even) { background-color: #fcfcfc; }
+    
+    .btn-back { display: inline-block; margin-top: 1.5rem; padding: 0.8rem 1.8rem; background: #b23a48; color: white; text-decoration: none; border-radius: 10px; font-weight: 600; transition: all 0.3s; box-shadow: 0 4px 12px rgba(178, 58, 72, 0.3); }
+    .btn-back:hover { background: #9b2d38; transform: translateY(-2px); }
   </style>
 </head>
 <body>
   <header>Detalle de Ventas</header>
   <div class="container">
     <h2>Historial de Ventas</h2>
-    <input type="text" id="busqueda" placeholder="Buscar por ID, fecha o usuario..." onkeyup="filtrar()">
+    <input type="text" id="busqueda" placeholder="Buscar por ID, fecha o vendedor... (Enter)">
+
     <table>
       <thead>
         <tr>
-          <th>ID Venta</th>
-          <th>Fecha</th>
-          <th>Usuario</th>
-          <th>Total Cobro</th>
-          <th>Medio de Pago</th>
+          <th style="width: 80px;">ID</th>
+          <th style="width: 150px;">Fecha</th>
+          <th>Vendedor</th>
+          <th>Detalle Productos</th> <th style="width: 100px;">Pago</th>
+          <th style="width: 120px;">Total</th>
         </tr>
       </thead>
-      <tbody id="tablaVentas"></tbody>
+      <tbody id="tablaVentas">
+        <tr><td colspan="6" style="text-align:center">Cargando ventas...</td></tr>
+      </tbody>
     </table>
+    <div style="text-align: center;">
+      <a href="dashboard.html" class="btn-back">Volver al Dashboard</a>
+    </div>
   </div>
 
   <script>
-    async function cargarVentas(){
-      const res = await fetch("http://localhost:3000/ventas");
-      const data = await res.json();
+    async function mostrarVentas(data) {
       const tabla = document.getElementById("tablaVentas");
       tabla.innerHTML = "";
+
+      if (!Array.isArray(data) || data.length === 0) {
+        tabla.innerHTML = `<tr><td colspan="6" style="text-align:center">⚠️ No se encontraron registros</td></tr>`;
+        return;
+      }
+
       data.forEach(v => {
+        // 1. Construir la lista de productos (HTML)
+        let htmlProductos = '<ul class="lista-meds">';
+        
+        // Verificamos si hay items en el JSON que manda el backend
+        if (v.items && v.items.length > 0) {
+          v.items.forEach(item => {
+             // Si es una venta vieja sin subtotal guardado, no mostramos el precio individual
+             const sub = item.subtotal ? `C$ ${parseFloat(item.subtotal).toFixed(2)}` : '';
+             
+             htmlProductos += `
+                <li>
+                  <span>${item.nombre} <span class="badge-cant">x${item.cantidad}</span></span>
+                  <span style="font-size:0.8rem; color:#888;">${sub}</span>
+                </li>`;
+          });
+        } else {
+          htmlProductos += '<li>Sin detalle</li>';
+        }
+        htmlProductos += '</ul>';
+
+        // 2. Formato de fecha amigable
+        const fecha = new Date(v.fecha).toLocaleDateString() + ' ' + new Date(v.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+
         const fila = `
           <tr>
-            <td>${v.idventa}</td>
-            <td>${new Date(v.fecha).toLocaleString()}</td>
-            <td>${v.usuario}</td>
-            <td>${v.totalcobro} C$</td>
-            <td>${v.mediopago}</td>
+            <td style="text-align:center; font-weight:bold;">#${v.idventa}</td>
+            <td style="text-align:center; font-size:0.9rem;">${fecha}</td>
+            <td>${v.usuario || 'Desconocido'}</td>
+            <td>${htmlProductos}</td> <td style="text-align:center; text-transform:capitalize;">${v.mediopago}</td>
+            <td style="text-align:right; font-weight:bold; color:#b23a48;">C$ ${parseFloat(v.totalcobro).toFixed(2)}</td>
           </tr>`;
         tabla.innerHTML += fila;
       });
     }
 
-    function filtrar(){
-      const texto = document.getElementById("busqueda").value.toLowerCase();
-      const filas = document.querySelectorAll("#tablaVentas tr");
-      filas.forEach(fila => {
-        const contenido = fila.innerText.toLowerCase();
-        fila.style.display = contenido.includes(texto) ? "" : "none";
-      });
+    async function cargarVentas() {
+      try {
+        const res = await fetch("http://localhost:3000/ventas");
+        const data = await res.json();
+        mostrarVentas(data);
+      } catch (err) {
+        console.error("Error:", err);
+        document.getElementById("tablaVentas").innerHTML = `<tr><td colspan="6" style="text-align:center">❌ Error al cargar ventas</td></tr>`;
+      }
     }
+
+    async function buscarVentas(texto) {
+      try {
+        const res = await fetch(`http://localhost:3000/ventas/vbuscar?texto=${encodeURIComponent(texto)}`);
+        if (!res.ok) return alert("❌ Error al buscar");
+        const data = await res.json();
+        mostrarVentas(data);
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    document.getElementById("busqueda").addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        const texto = e.target.value.trim();
+        texto.length > 0 ? buscarVentas(texto) : cargarVentas();
+      }
+    });
 
     cargarVentas();
   </script>

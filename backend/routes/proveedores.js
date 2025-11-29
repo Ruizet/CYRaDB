@@ -2,6 +2,8 @@ const express = require('express');
 const router = express.Router();
 const pool = require('../db');
 
+// LISTA PROVEEDORES
+
 router.get('/', async (req, res) => {
   try {
     const result = await pool.query('SELECT * FROM Proveedor');
@@ -10,6 +12,8 @@ router.get('/', async (req, res) => {
     res.status(500).json({ error: err.message });
   }
 });
+
+// CREA NUEVO PROVEEDOR
 
 router.post('/nuevo', async (req, res) => {
   const { nombre, contacto } = req.body;
