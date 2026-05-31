@@ -1,0 +1,14 @@
+# Dependencias de Node.js
+node_modules/
+
+# Archivos de registro 
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Variables de entorno 
+.env
+
+# Archivos basura del sistema operativo
+.DS_Store
+Thumbs.db

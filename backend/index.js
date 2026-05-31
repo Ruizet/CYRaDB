@@ -1,6 +1,7 @@
 const express = require('express');
 const cors = require('cors');
 const bodyParser = require('body-parser');
+const path = require('path'); // <-- NUEVO: Importamos path
 
 const usuariosRoutes = require('./routes/usuarios');
 const inventarioRoutes = require('./routes/inventario');
@@ -11,6 +12,15 @@ const proveedoresRoutes = require('./routes/proveedores');
 const app = express();
 app.use(cors());
 app.use(bodyParser.json());
+
+
+app.use(express.static(path.join(__dirname, '../frontend')));
+
+
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, '../frontend/login.html'));
+});
+// ----------------------------------------------------------------
 
 app.use('/usuarios', usuariosRoutes);
 app.use('/inventario', inventarioRoutes);
