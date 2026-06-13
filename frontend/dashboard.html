@@ -1,364 +1,117 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Dashboard | Farmacia C&R</title>
-  <style>
-    :root {
-      --primary: #b23a48;
-      --primary-dark: #9b2d38;
-      --success: #28a745;
-      --danger: #dc3545;
-      --light: #f8f9fa;
-      --gray: #6c757d;
-      --border: #dee2e6;
-      --shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
-      --radius: 14px;
-      --transition: all 0.3s ease;
-    }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      background: #f4f6f9;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      min-height: 100vh;
-      display: flex;
-    }
-
-    .sidebar {
-      width: 280px;
-      background: white;
-      padding: 1.5rem;
-      box-shadow: var(--shadow);
-      position: fixed;
-      top: 0; left: 0; bottom: 0;
-      overflow-y: auto;
-      z-index: 1000;
-    }
-
-    .logo {
-      text-align: center;
-      margin-bottom: 2rem;
-      padding-bottom: 1.5rem;
-      border-bottom: 1px solid #eee;
-    }
-
-    .logo h1 {
-      color: var(--primary);
-      font-size: 1.6rem;
-      font-weight: 700;
-    }
-
-    .logo p {
-      color: #888;
-      font-size: 0.9rem;
-      margin-top: 0.3rem;
-    }
-
-    .menu-group {
-      margin-bottom: 2rem;
-    }
-
-    .menu-title {
-      font-size: 0.8rem;
-      text-transform: uppercase;
-      letter-spacing: 1.2px;
-      color: #999;
-      margin-bottom: 0.8rem;
-      padding-left: 0.5rem;
-      font-weight: 600;
-    }
-
-    .divider {
-      height: 1px;
-      background: linear-gradient(to right, transparent, #e0e0e0, transparent);
-      margin: 1.2rem 0;
-    }
-
-    .menu-item {
-      display: flex;
-      align-items: center;
-      gap: 0.8rem;
-      padding: 0.9rem 1rem;
-      color: #444;
-      text-decoration: none;
-      border-radius: 10px;
-      margin: 0.3rem 0;
-      font-weight: 500;
-      transition: var(--transition);
-    }
-
-    .menu-item:hover {
-      background: #fdf2f2;
-      color: var(--primary);
-      transform: translateX(4px);
-    }
-
-    .menu-item.active {
-      background: var(--primary);
-      color: white;
-      font-weight: 600;
-    }
-
-    .menu-item svg {
-      width: 20px;
-      height: 20px;
-      flex-shrink: 0;
-    }
-
-    .menu-item.active svg path {
-      stroke: white;
-    }
-
-    .submenu {
-      padding-left: 2.2rem;
-      max-height: 0;
-      overflow: hidden;
-      transition: max-height 0.3s ease;
-    }
-
-    .submenu.show {
-      max-height: 300px;
-    }
-
-    .submenu a {
-      display: block;
-      padding: 0.7rem 1rem;
-      color: #666;
-      font-size: 0.95rem;
-      text-decoration: none;
-      border-radius: 8px;
-      margin: 0.2rem 0;
-      transition: var(--transition);
-    }
-
-    .submenu a:hover {
-      background: #f8f9fa;
-      color: var(--primary);
-    }
-
-    .main-content {
-      margin-left: 280px;
-      flex: 1;
-      padding: 2rem;
-      background: #f4f6f9;
-    }
-
-    .welcome {
-      background: white;
-      padding: 2.5rem;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-
-    .welcome h2 {
-      color: var(--primary);
-      font-size: 2rem;
-      margin-bottom: 0.5rem;
-    }
-
-    .welcome p {
-      color: #666;
-      font-size: 1.1rem;
-    }
-
-    .placeholder {
-      background: white;
-      padding: 4rem;
-      border-radius: var(--radius);
-      text-align: center;
-      color: #888;
-      font-size: 1.2rem;
-      box-shadow: var(--shadow);
-    }
-
-    .placeholder svg {
-      width: 80px;
-      height: 80px;
-      margin-bottom: 1rem;
-      opacity: 0.3;
-    }
-
-    @media (max-width: 992px) {
-      .sidebar { transform: translateX(-100%); }
-      .main-content { margin-left: 0; }
-      .sidebar.show { transform: translateX(0); }
-      .toggle-btn { display: block; }
-    }
-
-    .toggle-btn {
-      display: none;
-      position: fixed;
-      top: 1rem;
-      left: 1rem;
-      background: var(--primary);
-      color: white;
-      border: none;
-      padding: 0.7rem;
-      border-radius: 10px;
-      cursor: pointer;
-      z-index: 1100;
-      font-size: 1.3rem;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
-    }
-
-    .logout {
-      margin-top: 3rem;
-      text-align: center;
-      padding-top: 1.5rem;
-      border-top: 1px solid #eee;
-    }
-
-    .logout a {
-      color: var(--danger);
-      text-decoration: none;
-      font-size: 0.95rem;
-      font-weight: 500;
-    }
-
-    .logout a:hover {
-      text-decoration: underline;
-    }
-
-    .admin-only {
-      display: none;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dashboard | Farmacia C&R</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="style.css">
+<style>
+.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;margin-bottom:1.5rem}
+.kpi{padding:1.1rem 1.25rem;display:flex;align-items:center;gap:.9rem}
+.kpi-icon{width:42px;height:42px;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.kpi-icon i{font-size:1.3rem}
+.kpi-val{font-size:1.6rem;font-weight:600;line-height:1.1;letter-spacing:-.5px}
+.kpi-label{font-size:.75rem;color:var(--text-3);margin-top:2px}
+.ic-brand{background:var(--brand-light);color:var(--brand)}
+.ic-success{background:var(--success-bg);color:var(--success)}
+.ic-warning{background:var(--warning-bg);color:var(--warning)}
+.ic-info{background:var(--info-bg);color:var(--info)}
+.alerts-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+.alert-row{display:flex;align-items:flex-start;gap:.75rem;padding:.65rem .75rem;border-radius:8px;border:1px solid var(--border-soft)}
+.alert-row.nivel-critico{background:var(--danger-bg);border-color:var(--brand-mid)}
+.alert-row.nivel-advertencia{background:var(--warning-bg);border-color:#f0d89a}
+.alert-icon{font-size:1rem;flex-shrink:0;margin-top:1px}
+.alert-row.nivel-critico .alert-icon{color:var(--brand)}
+.alert-row.nivel-advertencia .alert-icon{color:var(--warning)}
+.alert-desc{font-size:.82rem;font-weight:500;color:var(--text-1);line-height:1.35}
+.alert-detalle{font-size:.75rem;color:var(--text-3);margin-top:2px}
+@media(max-width:1100px){.kpi-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:700px){.alerts-grid{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
-
-  <button class="toggle-btn" onclick="toggleSidebar()">Menu</button>
-
-  <aside class="sidebar" id="sidebar">
-    <div class="logo">
-      <h1>Farmacia C&R</h1>
-      <p>Sistema de Gestión</p>
+<aside class="sidebar" id="sidebar"></aside>
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Dashboard</div>
+      <div class="topbar-sub" id="fecha-hoy"></div>
     </div>
-
-    <div class="menu-group">
-      <div class="menu-title">Operaciones</div>
-      <a href="inventario.html" class="menu-item">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <rect x="3" y="3" width="18" height="18" rx="2"/>
-          <path d="M3 9h18M9 21V9"/>
-        </svg>
-        <span>Inventario</span>
-      </a>
-      <a href="ingreso.html" class="menu-item">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
-          <polyline points="7 10 12 15 17 10"/>
-          <line x1="12" y1="15" x2="12" y2="3"/>
-        </svg>
-        <span>Ingreso de Medicamentos</span>
-      </a>
-      <a href="venta.html" class="menu-item">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/>
-          <line x1="3" y1="6" x2="21" y2="6"/>
-          <path d="M16 10a4 4 0 0 1-8 0"/>
-        </svg>
-        <span>Facturación</span>
-      </a>
-    </div>
-
-    <div class="divider"></div>
-
-    <div class="menu-group">
-      <div class="menu-title">Registros</div>
-      <div class="menu-item" onclick="toggleSubmenu('historial')">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M12 8v4l3 3m6-3a9 9 0 1 1-18 0 9 9 0 0 1 18 0z"/>
-        </svg>
-        <span>Historial</span>
+  </div>
+  <div class="page">
+    <div class="kpi-grid">
+      <div class="card kpi">
+        <div class="kpi-icon ic-brand"><i class="ti ti-receipt" aria-hidden="true"></i></div>
+        <div><div class="kpi-val" id="kpi-ventas">—</div><div class="kpi-label">Ventas hoy</div></div>
       </div>
-      <div class="submenu" id="submenu-historial">
-        <a href="detalleventas.html">Detalle de ventas</a>
-        <a href="detallecompras.html">Detalle de compras</a>
+      <div class="card kpi">
+        <div class="kpi-icon ic-success"><i class="ti ti-cash" aria-hidden="true"></i></div>
+        <div><div class="kpi-val" id="kpi-ingresos">—</div><div class="kpi-label">Ingresos hoy</div></div>
+      </div>
+      <div class="card kpi">
+        <div class="kpi-icon ic-warning"><i class="ti ti-alert-triangle" aria-hidden="true"></i></div>
+        <div><div class="kpi-val" id="kpi-alertas">—</div><div class="kpi-label">Alertas críticas</div></div>
+      </div>
+      <div class="card kpi">
+        <div class="kpi-icon ic-info"><i class="ti ti-shopping-cart" aria-hidden="true"></i></div>
+        <div><div class="kpi-val" id="kpi-sesiones">—</div><div class="kpi-label">Cajas abiertas</div></div>
       </div>
     </div>
 
-    <div class="divider"></div>
-
-    <div class="menu-group">
-      <div class="menu-title">Configuración</div>
-      <a href="ingresoproveedores.html" class="menu-item">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/>
-          <circle cx="12" cy="7" r="4"/>
-        </svg>
-        <span>Proveedores</span>
-      </a>
-
-      <a href="gestionusuarios.html" class="menu-item admin-only" id="gestionUsuariosLink">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-          <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/>
-          <circle cx="9" cy="7" r="4"/>
-          <path d="M23 21v-2a4 4 0 0 0-3-3.87"/>
-          <path d="M16 3.13a4 4 0 0 1 0 7.75"/>
-        </svg>
-        <span>Gestión de Usuarios</span>
-      </a>
+    <div class="card">
+      <div class="card-header">
+        <span class="card-title"><i class="ti ti-alert-circle" style="color:var(--brand);margin-right:.4rem" aria-hidden="true"></i>Alertas activas</span>
+        <button class="btn btn-ghost btn-sm" onclick="cargarAlertas()"><i class="ti ti-refresh" aria-hidden="true"></i> Actualizar</button>
+      </div>
+      <div class="card-body">
+        <div id="alertas-area"></div>
+      </div>
     </div>
+  </div>
+</div>
+<div id="toast-area"></div>
+<script src="app.js"></script>
+<script>
+const u = requireAuth();
+document.getElementById('fecha-hoy').textContent = new Date().toLocaleDateString('es-NI',{weekday:'long',day:'numeric',month:'long',year:'numeric'});
 
-    <div class="logout">
-      <a href="#" onclick="logout()">Cerrar Sesión</a>
-    </div>
-  </aside>
+async function cargarKPIs() {
+  try {
+    const r = await fetch(`${API}/dashboard/hoy`);
+    const d = await r.json();
+    document.getElementById('kpi-ventas').textContent = d.ventas_hoy ?? 0;
+    document.getElementById('kpi-ingresos').textContent = moneda(d.ingresos_hoy);
+    document.getElementById('kpi-alertas').textContent = d.alertas_criticas ?? 0;
+    document.getElementById('kpi-sesiones').textContent = d.sesiones_abiertas ?? 0;
+    renderSidebar('dashboard', d.alertas_criticas > 0 ? d.alertas_criticas : null);
+  } catch { toast('Error cargando KPIs','err'); }
+}
 
-  <main class="main-content">
-    <div class="welcome">
-      <h2>Bienvenido al sistema de farmacia C&R</h2>
-      <p>Selecciona un módulo del menú lateral para comenzar.</p>
-    </div>
-
-    <div class="placeholder">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5">
-        <rect x="3" y="3" width="18" height="18" rx="2"/>
-        <path d="M3 9h18M9 21V9"/>
-      </svg>
-      <div>Recordatorios</div>
-      <p>Aquí el administrador puede dejar avisos para el día.</p>
-    </div>
-  </main>
-
-  <script>
-    const usuarioActual = JSON.parse(localStorage.getItem("usuarioActual") || "null");
-    const gestionLink = document.getElementById("gestionUsuariosLink");
-
-    // Mostrar solo si es admin
-    if (usuarioActual && usuarioActual.rol === "administrador") {
-      gestionLink.style.display = "flex";
+async function cargarAlertas() {
+  try {
+    const r = await fetch(`${API}/dashboard/alertas`);
+    const data = await r.json();
+    const area = document.getElementById('alertas-area');
+    if (!data.length) {
+      area.innerHTML = `<div class="empty-state"><i class="ti ti-circle-check" style="color:var(--success)"></i><p>Sin alertas activas</p></div>`;
+      return;
     }
+    const iconos = { vencimiento:'ti-calendar-x', stock:'ti-package-off' };
+    area.innerHTML = `<div class="alerts-grid">${data.map(a=>`
+      <div class="alert-row nivel-${a.nivel}">
+        <i class="ti ${iconos[a.tipo]||'ti-alert-circle'} alert-icon" aria-hidden="true"></i>
+        <div>
+          <div class="alert-desc">${a.descripcion}</div>
+          <div class="alert-detalle">${a.tipo==='vencimiento'?'Vence: '+a.detalle:a.detalle}</div>
+        </div>
+      </div>`).join('')}</div>`;
+  } catch { toast('Error cargando alertas','err'); }
+}
 
-    function toggleSidebar() {
-      document.getElementById('sidebar').classList.toggle('show');
-    }
-
-    function toggleSubmenu(id) {
-      const submenu = document.getElementById(`submenu-${id}`);
-      submenu.classList.toggle('show');
-    }
-
-    function logout() {
-      localStorage.removeItem('usuarioActual');
-      window.location.href = 'login.html';
-    }
-
-    // Cerrar al hacer clic fuera (móvil)
-    document.addEventListener('click', (e) => {
-      const sidebar = document.getElementById('sidebar');
-      const toggleBtn = document.querySelector('.toggle-btn');
-      if (window.innerWidth <= 992 && 
-          !sidebar.contains(e.target) && 
-          !toggleBtn.contains(e.target)) {
-        sidebar.classList.remove('show');
-      }
-    });
-  </script>
+renderSidebar('dashboard');
+cargarKPIs();
+cargarAlertas();
+</script>
 </body>
 </html>
