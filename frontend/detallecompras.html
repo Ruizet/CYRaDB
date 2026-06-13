@@ -1,149 +1,144 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Detalle de Compras | Farmacia C&R</title>
-  <style>
-    body { background: #f8f8f8; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; }
-    header { background: #b23a48; color: white; padding: 1rem; width: 100%; text-align: center; font-size: 1.5rem; font-weight: bold; }
-    
-    /* Contenedor principal */
-    .container { margin-top: 2rem; background: white; padding: 2rem; border-radius: 12px; width: 95%; max-width: 1200px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-    
-    h2 { color: #b23a48; margin-bottom: 1rem; }
-    input { width: 100%; padding: 0.8rem; margin-bottom: 1rem; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; }
-    
-    table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.95rem; }
-    table th, table td { padding: 0.8rem; border: 1px solid #ddd; text-align: left; vertical-align: top; }
-    table th { background: #f3d0d3; color: #b23a48; text-align: center; }
-    
-    /* === ESTILOS NUEVOS PARA LA LISTA (Igual que en Ventas) === */
-    .lista-meds { list-style: none; padding: 0; margin: 0; font-size: 0.85rem; color: #555; }
-    .lista-meds li { 
-      margin-bottom: 4px; 
-      border-bottom: 1px dashed #eee; 
-      padding-bottom: 2px;
-      display: flex;              /* Esto alinea nombre a la izq y precio a la der */
-      justify-content: space-between; 
-    }
-    .lista-meds li:last-child { border-bottom: none; }
-    
-    /* La etiqueta gris de cantidad (x100) */
-    .badge-cant { background: #e9ecef; padding: 1px 6px; border-radius: 4px; font-weight: bold; font-size: 0.8rem; color: #333; margin-left: 5px; }
-
-    tr:nth-child(even) { background-color: #fcfcfc; }
-    
-    .btn-back { display: inline-block; margin-top: 1.5rem; padding: 0.8rem 1.8rem; background: #b23a48; color: white; text-decoration: none; border-radius: 10px; font-weight: 600; transition: all 0.3s; box-shadow: 0 4px 12px rgba(178, 58, 72, 0.3); }
-    .btn-back:hover { background: #9b2d38; transform: translateY(-2px); }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Historial de compras | Farmacia C&R</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="style.css">
+<style>
+.items-detalle{font-size:.8rem;color:var(--text-2);margin-top:.35rem;line-height:1.6}
+.detail-list{display:flex;flex-direction:column;gap:.4rem;margin-top:.5rem}
+.detail-row{display:flex;justify-content:space-between;align-items:center;padding:.45rem .6rem;background:var(--surface-2);border-radius:7px;font-size:.85rem}
+</style>
 </head>
 <body>
-  <header>Detalle de Compras</header>
-  <div class="container">
-    <h2>Historial Completo</h2>
-    <input type="text" id="busqueda" placeholder="Buscar por ID o Proveedor... (Enter)">
-
-    <table>
-      <thead>
-        <tr>
-          <th style="width: 80px;">ID</th>
-          <th style="width: 150px;">Fecha</th>
-          <th>Proveedor</th>
-          <th>Registrado Por</th>
-          <th>Detalle Productos</th>
-          <th style="width: 120px;">Total</th>
-        </tr>
-      </thead>
-      <tbody id="tablaCompras">
-        <tr><td colspan="6" style="text-align:center">Cargando compras...</td></tr>
-      </tbody>
-    </table>
-    
-    <div style="text-align: center;">
-      <a href="dashboard.html" class="btn-back">Volver al Dashboard</a>
+<aside class="sidebar" id="sidebar"></aside>
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Historial de compras</div>
+      <div class="topbar-sub" id="comp-count"></div>
+    </div>
+    <div class="flex-center gap-sm">
+      <input type="text" class="form-control" style="width:220px" id="buscar" placeholder="Buscar…" oninput="filtrar()">
+      <button class="btn btn-ghost btn-sm" onclick="cargar()"><i class="ti ti-refresh" aria-hidden="true"></i></button>
     </div>
   </div>
+  <div class="page">
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Fecha</th>
+              <th>Proveedor</th>
+              <th>Registrado por</th>
+              <th>Ítems</th>
+              <th>Total pagado</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
 
-  <script>
-    async function mostrarCompras(data) {
-      const tabla = document.getElementById("tablaCompras");
-      tabla.innerHTML = "";
+<!-- Modal detalle -->
+<div class="modal-backdrop" id="modal-detalle">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">Detalle de compra</span>
+      <button class="btn-icon" onclick="closeModal('modal-detalle')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body" id="modal-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-detalle')">Cerrar</button>
+    </div>
+  </div>
+</div>
 
-      if (!Array.isArray(data) || data.length === 0) {
-        tabla.innerHTML = `<tr><td colspan="6" style="text-align:center">No se encontraron registros</td></tr>`;
-        return;
-      }
+<div id="toast-area"></div>
+<script src="app.js"></script>
+<script>
+const u = requireAuth();
+renderSidebar('detallecompras');
+let todas = [];
 
-      data.forEach(c => {
-        // 1. Construimos la lista con el formato visual correcto
-        let htmlProductos = '<ul class="lista-meds">';
-        
-        if (c.items && c.items.length > 0) {
-            c.items.forEach(item => {
-                // Aquí obtenemos el subtotal (Costo del lote) y lo formateamos
-                // Si es un registro viejo y no tiene subtotal, no mostramos nada
-                const sub = item.subtotal ? `C$ ${parseFloat(item.subtotal).toFixed(2)}` : '';
+async function cargar() {
+  try {
+    const r = await fetch(`${API}/compras`);
+    todas = await r.json();
+    document.getElementById('comp-count').textContent = `${todas.length} compras registradas`;
+    filtrar();
+  } catch { toast('Error cargando compras','err'); }
+}
 
-                htmlProductos += `
-                    <li>
-                        <span>${item.nombre} <span class="badge-cant">x${item.cantidad}</span></span>
-                        <span style="font-size:0.8rem; color:#888;">${sub}</span> </li>`;
-            });
-        } else {
-            htmlProductos += '<li>Sin detalle</li>';
-        }
-        htmlProductos += '</ul>';
+function filtrar() {
+  const q = document.getElementById('buscar').value.toLowerCase();
+  const data = !q ? todas : todas.filter(c =>
+    String(c.idcompra).includes(q) ||
+    (c.proveedor||'').toLowerCase().includes(q) ||
+    (c.usuario||'').toLowerCase().includes(q)
+  );
+  renderTabla(data);
+}
 
-        // 2. Formato de fecha y usuario
-        const fecha = new Date(c.fecha).toLocaleDateString() + ' ' + new Date(c.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-        
-        const usuarioDisplay = c.usuario ? 
-            `<span style="color:#28a745; font-weight:600;">${c.usuario}</span>` : 
-            `<span style="color:#999; font-style:italic;">Desconocido</span>`;
+function renderTabla(data) {
+  const tbody = document.getElementById('tbody');
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="7"><div class="empty-state"><i class="ti ti-truck"></i><p>Sin compras</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = data.map(c => {
+    const items = Array.isArray(c.items) ? c.items : [];
+    const resumen = items.slice(0,2).map(i=>`${i.nombre} ×${i.cantidad}`).join(', ') + (items.length>2?` y ${items.length-2} más`:'');
+    return `<tr>
+      <td class="font-medium text-brand">#${c.idcompra}</td>
+      <td>${fechaHora(c.fecha)}</td>
+      <td class="font-medium">${c.proveedor}</td>
+      <td>${c.usuario}</td>
+      <td>
+        <div class="font-medium text-sm">${items.length} producto(s)</div>
+        <div class="items-detalle">${resumen||'—'}</div>
+      </td>
+      <td class="font-semi">C$ ${parseFloat(c.totalpago).toFixed(2)}</td>
+      <td>
+        <button class="btn-icon btn-sm" onclick='verDetalle(${JSON.stringify(c)})' title="Ver detalle">
+          <i class="ti ti-eye"></i>
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+}
 
-        const fila = `
-          <tr>
-            <td style="text-align:center; font-weight:bold;">#${c.idcompra}</td>
-            <td style="text-align:center; font-size:0.9rem;">${fecha}</td>
-            <td>${c.proveedor}</td>
-            <td>${usuarioDisplay}</td>
-            <td>${htmlProductos}</td>
-            <td style="text-align:right; font-weight:bold; color:#b23a48;">C$ ${parseFloat(c.totalpago).toFixed(2)}</td>
-          </tr>`;
-        tabla.innerHTML += fila;
-      });
-    }
+function verDetalle(c) {
+  const items = Array.isArray(c.items) ? c.items : [];
+  document.getElementById('modal-title').textContent = `Compra #${c.idcompra} — ${c.proveedor}`;
+  document.getElementById('modal-body').innerHTML = `
+    <div class="flex-between mb-md">
+      <div><div class="text-sm text-muted">Fecha</div><div class="font-medium">${fechaHora(c.fecha)}</div></div>
+      <div><div class="text-sm text-muted">Registrado por</div><div class="font-medium">${c.usuario}</div></div>
+      <div><div class="text-sm text-muted">Total pagado</div><div class="font-semi text-brand">C$ ${parseFloat(c.totalpago).toFixed(2)}</div></div>
+    </div>
+    <div class="form-label">Ítems de la compra</div>
+    <div class="detail-list">
+      ${items.map(i=>`
+        <div class="detail-row">
+          <div>
+            <div class="font-medium">${i.nombre}</div>
+            <div class="text-sm text-muted">${i.cantidad} unidades · C$ ${parseFloat(i.costo).toFixed(4)} c/u</div>
+          </div>
+          <div class="font-semi">C$ ${parseFloat(i.subtotal).toFixed(2)}</div>
+        </div>`).join('')}
+    </div>`;
+  openModal('modal-detalle');
+}
 
-    async function cargarCompras() {
-      try {
-        const res = await fetch("http://localhost:3000/compras");
-        if (!res.ok) throw new Error("Error en servidor");
-        const data = await res.json();
-        mostrarCompras(data);
-      } catch (err) {
-        console.error("Error cargando compras:", err);
-        document.getElementById("tablaCompras").innerHTML = `<tr><td colspan="6" style="text-align:center">Error al cargar compras</td></tr>`;
-      }
-    }
-
-    async function buscarCompras(texto) {
-      try {
-        const res = await fetch(`http://localhost:3000/compras/buscar?texto=${encodeURIComponent(texto)}`);
-        const data = await res.json();
-        mostrarCompras(data);
-      } catch (err) {
-        mostrarCompras([]);
-      }
-    }
-
-    document.getElementById("busqueda").addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        const texto = e.target.value.trim();
-        texto.length > 0 ? buscarCompras(texto) : cargarCompras();
-      }
-    });
-
-    cargarCompras();
-  </script>
+cargar();
+</script>
 </body>
 </html>

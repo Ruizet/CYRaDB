@@ -1,248 +1,300 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ingreso de Medicamentos | Farmacia C&R</title>
-  <style>
-    :root { --primary: #b23a48; --success: #28a745; --danger: #dc3545; --gray: #6c757d; --light: #f8f9fa; --border: #dee2e6; }
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%); font-family: 'Segoe UI', sans-serif; padding: 1.5rem; }
-    .container { max-width: 1000px; margin: 0 auto; background: white; border-radius: 16px; padding: 2rem; box-shadow: 0 10px 30px rgba(0,0,0,0.12); }
-    h1 { color: var(--primary); text-align: center; margin-bottom: 1.5rem; }
-    .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 1rem; margin-bottom: 1.5rem; }
-    label { font-weight: 600; font-size: 0.95rem; display: block; margin-bottom: 0.4rem; }
-    input, select { width: 100%; padding: 0.8rem; border: 1.5px solid var(--border); border-radius: 10px; font-size: 1rem; }
-    input:focus, select:focus { border-color: var(--primary); outline: none; box-shadow: 0 0 0 3px rgba(178,58,72,0.15); }
-    .btn { padding: 0.7rem 1rem; border: none; border-radius: 10px; cursor: pointer; font-weight: 600; }
-    .btn-add { background: var(--success); color: white; }
-    .btn-remove { background: var(--danger); color: white; width: 36px; }
-    .btn-submit { background: var(--primary); color: white; padding: 1rem; font-size: 1.1rem; width: 100%; margin-top: 1rem; }
-    table { width: 100%; border-collapse: collapse; margin: 1.5rem 0; }
-    th, td { padding: 0.8rem; text-align: left; border-bottom: 1px solid #eee; }
-    th { background: #f8f9fa; font-weight: 600; color: var(--primary); }
-    .mensaje { padding: 1rem; border-radius: 10px; margin: 1rem 0; text-align: center; font-weight: 600; }
-    .exito { background: #d4edda; color: #155724; }
-    .error { background: #f8d7da; color: #721c24; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Ingresar medicamentos | Farmacia C&R</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="style.css">
+<style>
+.ingreso-layout{display:grid;grid-template-columns:1fr 340px;gap:1.25rem;align-items:start}
+.items-list{display:flex;flex-direction:column;gap:.6rem;margin-top:.75rem}
+.item-card{background:var(--surface-2);border:1px solid var(--border);border-radius:var(--radius);padding:.85rem 1rem;position:relative}
+.item-card-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem}
+.item-num{font-size:.75rem;font-weight:600;background:var(--brand-light);color:var(--brand);padding:2px 8px;border-radius:6px}
+.pres-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.4rem;margin-bottom:.6rem}
+.pres-btn{padding:.45rem .3rem;border:1.5px solid var(--border);border-radius:8px;background:var(--surface);cursor:pointer;font-size:.75rem;text-align:center;transition:var(--transition);color:var(--text-2)}
+.pres-btn:hover{border-color:var(--brand);color:var(--brand)}
+.pres-btn.active{border-color:var(--brand);background:var(--brand-light);color:var(--brand);font-weight:500}
+.precio-preview{display:flex;align-items:center;justify-content:space-between;background:var(--success-bg);border:1px solid #b8dfc9;border-radius:8px;padding:.5rem .75rem;margin-top:.4rem;font-size:.82rem}
+.precio-preview .pv-val{font-weight:600;color:var(--success);font-size:.95rem}
+.resumen-compra{display:flex;flex-direction:column;gap:.5rem}
+.rc-row{display:flex;justify-content:space-between;font-size:.875rem;padding:.4rem 0;border-bottom:1px solid var(--border-soft)}
+.rc-row:last-child{border-bottom:none}
+.rc-total{font-size:1.05rem;font-weight:600;padding-top:.6rem;border-top:2px solid var(--border)}
+</style>
 </head>
 <body>
-  <div class="container">
-    <h1>Ingreso de Compra</h1>
-
-    <div class="form-grid">
-      <div>
-        <label>Proveedor</label>
-        <select id="proveedor" required></select>
-      </div>
+<aside class="sidebar" id="sidebar"></aside>
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Ingresar medicamentos</div>
+      <div class="topbar-sub">Registrar compra con uno o varios ítems</div>
     </div>
-
-    <hr style="margin: 2rem 0; border: 1px dashed #ddd;">
-
-    <h2>Agregar Medicamentos</h2>
-    
-    <div class="form-grid" id="itemForm">
-      <div>
-        <label>Nombre Medicamento</label>
-        <input type="text" id="nombre" placeholder="Ej: Acetaminofén" required>
-      </div>
-      
-      <div>
-        <label>Presentación</label>
-        <select id="presentacion">
-          <option value="caja">Caja</option>
-          <option value="frasco">Frasco</option>
-          <option value="blister">Blíster</option>
-          <option value="sobre">Sobre</option>
-          <option value="ampolla">Ampolla</option>
-          <option value="unidad">Unidad</option>
-        </select>
-      </div>
-
-      <div>
-        <label style="color: var(--success);">Cantidad TOTAL (Unidades)</label>
-        <input type="number" id="cantidadTotal" min="1" placeholder="Total de pastillas/unidades" required>
-        <small style="color:gray;">Ej: Si compraste 5 cajas de 100, pon 500.</small>
-      </div>
-
-      <div>
-        <label>Ubicación / Estante</label>
-        <input type="text" id="estante" placeholder="Ej: A3, B12">
-      </div>
-
-      <div>
-        <label style="color: var(--primary);">Costo Total Compra (C$)</label>
-        <input type="number" step="0.01" id="precio" min="0.01" placeholder="Lo que pagaste por todo" required>
-      </div>
-      
-      <div>
-        <label>Fecha Vencimiento</label>
-        <input type="date" id="vencimiento" required>
-      </div>
-      
-      <div style="display:flex; align-items:end;">
-        <button type="button" class="btn btn-add" onclick="agregarItem()">+ Agregar</button>
-      </div>
-    </div>
-
-    <table id="tablaItems">
-      <thead>
-        <tr>
-          <th>Medicamento</th>
-          <th>Cant. Total</th>
-          <th>Estante</th>
-          <th>Costo Lote</th>
-          <th>Acción</th>
-        </tr>
-      </thead>
-      <tbody></tbody>
-    </table>
-
-    <h3>Total Factura: C$ <span id="totalCompra">0.00</span></h3>
-
-    <button class="btn btn-submit" onclick="enviarCompra()" id="btnEnviar" disabled>
-      Confirmar y Guardar Compra
+    <button class="btn btn-primary" onclick="agregarItem()">
+      <i class="ti ti-plus" aria-hidden="true"></i> Agregar ítem
     </button>
-
-    <div id="mensaje"></div>
-    <a href="dashboard.html" style="display:block; text-align:center; margin-top:1rem; color:var(--primary);">Volver al Dashboard</a>
   </div>
+  <div class="page">
+    <div class="ingreso-layout">
+      <!-- Columna izquierda: ítems -->
+      <div>
+        <div class="card card-body" style="margin-bottom:1rem">
+          <div class="form-row">
+            <div class="form-group" style="margin-bottom:0">
+              <label class="form-label">Proveedor</label>
+              <select class="form-control" id="sel-proveedor">
+                <option value="">— Seleccionar —</option>
+              </select>
+            </div>
+          </div>
+        </div>
+        <div class="items-list" id="items-list"></div>
+        <button class="btn btn-ghost btn-full mt-md" onclick="agregarItem()">
+          <i class="ti ti-plus" aria-hidden="true"></i> Agregar otro medicamento
+        </button>
+      </div>
+      <!-- Columna derecha: resumen -->
+      <div class="card card-body" style="position:sticky;top:1rem">
+        <div class="card-title mb-md">Resumen de la compra</div>
+        <div class="resumen-compra" id="resumen-compra">
+          <div class="text-muted text-sm">Sin ítems aún</div>
+        </div>
+        <button class="btn btn-primary btn-full btn-lg mt-lg" id="btn-registrar" onclick="registrarCompra()" disabled>
+          <i class="ti ti-check" aria-hidden="true"></i> Registrar compra
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+<div id="toast-area"></div>
+<script src="app.js"></script>
+<script>
+const u = requireAuth();
+renderSidebar('ingreso');
 
-  <script>
-    let items = [];
-    
-    // --- LÓGICA DE SESIÓN ---
-    const usuarioJSON = localStorage.getItem("usuarioActual");
-    if (!usuarioJSON) {
-        alert("Debes iniciar sesión primero.");
-        window.location.href = "login.html";
-        throw new Error("Sin sesión"); 
-    }
-    const usuarioSesion = JSON.parse(usuarioJSON);
-    const ID_USUARIO_ACTUAL = usuarioSesion.idusuario;
-    // ------------------------
+const PRESENTACIONES = ['Tabletas','Cápsulas','Jarabe','Suspensión','Crema','Gel','Gotas','Inyectable','Parche','Polvo','Aerosol','Ovulo','Supositorio','Otros'];
+let itemCount = 0;
+let margenDefecto = 30;
 
-    const proveedorSelect = document.getElementById("proveedor");
+async function init() {
+  // Cargar proveedores
+  const r = await fetch(`${API}/proveedores`);
+  const provs = await r.json();
+  const sel = document.getElementById('sel-proveedor');
+  provs.forEach(p => {
+    const o = document.createElement('option');
+    o.value = p.idproveedor; o.textContent = p.nombre; sel.appendChild(o);
+  });
+  // Cargar margen defecto
+  try {
+    const rc = await fetch(`${API}/config`);
+    const cfg = await rc.json();
+    margenDefecto = parseFloat(cfg.margen_defecto || 30);
+  } catch {}
+  agregarItem();
+}
 
-    async function cargarProveedores() {
+function agregarItem() {
+  itemCount++;
+  const id = itemCount;
+  const div = document.createElement('div');
+  div.className = 'item-card';
+  div.id = `item-${id}`;
+  div.innerHTML = `
+    <div class="item-card-header">
+      <span class="item-num">Ítem #${id}</span>
+      <button class="btn-icon btn-sm" onclick="quitarItem(${id})" title="Quitar ítem">
+        <i class="ti ti-trash" style="color:var(--brand)"></i>
+      </button>
+    </div>
+    <div class="form-row" style="grid-template-columns:1fr auto">
+      <div class="form-group" style="margin-bottom:.6rem">
+        <label class="form-label">Nombre del medicamento</label>
+        <div class="autocomplete-wrap">
+          <input type="text" class="form-control" id="nombre-${id}" placeholder="Ej: Amoxicilina" autocomplete="off" oninput="recalcular(${id})">
+          <div class="autocomplete-list" id="ac-${id}"></div>
+        </div>
+      </div>
+    </div>
+    <div class="form-label" style="margin-bottom:.4rem">Presentación</div>
+    <div class="pres-grid" id="pres-grid-${id}">
+      ${PRESENTACIONES.map(p=>`<button type="button" class="pres-btn" data-pres="${p}" onclick="selPres(${id},'${p}',this)">${p}</button>`).join('')}
+    </div>
+    <input type="hidden" id="pres-${id}" value="">
+    <div class="form-row">
+      <div class="form-group" style="margin-bottom:.6rem">
+        <label class="form-label">Descripción / dosis</label>
+        <input type="text" class="form-control" id="desc-${id}" placeholder="Ej: 500mg, 30ml">
+      </div>
+      <div class="form-group" style="margin-bottom:.6rem">
+        <label class="form-label">Fecha de vencimiento</label>
+        <input type="date" class="form-control" id="vence-${id}">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group" style="margin-bottom:.6rem">
+        <label class="form-label">Cantidad (unidades)</label>
+        <input type="number" class="form-control" id="cant-${id}" min="1" placeholder="0" oninput="recalcular(${id})">
+      </div>
+      <div class="form-group" style="margin-bottom:.6rem">
+        <label class="form-label">Costo total del lote (C$)</label>
+        <input type="number" class="form-control" id="costo-${id}" min="0" step="0.01" placeholder="0.00" oninput="recalcular(${id})">
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group" style="margin-bottom:.6rem">
+        <label class="form-label">Margen (%)</label>
+        <input type="number" class="form-control" id="margen-${id}" min="1" max="99" value="${margenDefecto}" placeholder="${margenDefecto}" oninput="recalcular(${id})">
+      </div>
+      <div class="form-group" style="margin-bottom:.6rem">
+        <label class="form-label">Precio venta manual (opcional)</label>
+        <input type="number" class="form-control" id="pventa-${id}" min="0" step="0.01" placeholder="Auto" oninput="recalcular(${id})">
+      </div>
+    </div>
+    <div class="form-group" style="margin-bottom:.4rem">
+      <label class="form-label">Ubicación en estante</label>
+      <input type="text" class="form-control" id="ubic-${id}" placeholder="Ej: A3, Estante 2">
+    </div>
+    <div class="precio-preview" id="preview-${id}" style="display:none">
+      <span>Precio de venta calculado</span>
+      <span class="pv-val" id="pv-val-${id}">C$ 0.00</span>
+    </div>`;
+  document.getElementById('items-list').appendChild(div);
+
+  // Autocomplete para nombre (busca existentes pero permite texto libre)
+  setupAutocompleteNombre(id);
+  recalcular(id);
+  actualizarResumen();
+}
+
+function setupAutocompleteNombre(id) {
+  const input = document.getElementById(`nombre-${id}`);
+  const list  = document.getElementById(`ac-${id}`);
+  let timer;
+  input.addEventListener('input', () => {
+    clearTimeout(timer);
+    const q = input.value.trim();
+    if (q.length < 2) { list.classList.remove('open'); return; }
+    timer = setTimeout(async () => {
       try {
-        const res = await fetch("http://localhost:3000/proveedores"); 
-        const data = await res.json();
-        proveedorSelect.innerHTML = '<option value="">Selecciona proveedor</option>';
-        data.forEach(p => {
-          const opt = new Option(p.nombre, p.idproveedor);
-          proveedorSelect.add(opt);
-        });
-      } catch(e) { console.error("Error cargando proveedores"); }
-    }
+        const r = await fetch(`${API}/inventario/buscar?q=${encodeURIComponent(q)}`);
+        const grupos = await r.json();
+        if (!grupos.length) { list.classList.remove('open'); return; }
+        list.innerHTML = grupos.slice(0,8).map(g=>`
+          <div class="ac-item" onmousedown="event.preventDefault();document.getElementById('nombre-${id}').value='${g.nombre.replace(/'/g,"\\'")}';list_${id}.classList.remove('open')">
+            <div class="ac-item-left"><span class="ac-item-name">${g.nombre}</span>
+              <span class="ac-item-pres">${g.lotes.length} lote(s) registrado(s)</span>
+            </div>
+          </div>`).join('');
+        // Bind list reference for inline onclick
+        window[`list_${id}`] = list;
+        list.classList.add('open');
+      } catch {}
+    }, 250);
+  });
+  document.addEventListener('click', e => {
+    if (!input.contains(e.target)) list.classList.remove('open');
+  });
+}
 
-    function actualizarTabla() {
-      const tbody = document.querySelector("#tablaItems tbody");
-      tbody.innerHTML = "";
-      let total = 0;
+function selPres(id, pres, btn) {
+  document.querySelectorAll(`#pres-grid-${id} .pres-btn`).forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(`pres-${id}`).value = pres;
+}
 
-      items.forEach((item, i) => {
-        total += parseFloat(item.costoTotalLote);
-        const tr = document.createElement("tr");
-        tr.innerHTML = `
-          <td><strong>${item.nombreMedicamento}</strong><br><small>${item.presentacion}</small></td>
-          <td>${item.cantidadTotal} Unid.</td>
-          <td>${item.ubicacionEstante || '—'}</td>
-          <td>C$ ${parseFloat(item.costoTotalLote).toFixed(2)}</td>
-          <td><button class="btn btn-remove" onclick="eliminarItem(${i})">X</button></td>
-        `;
-        tbody.appendChild(tr);
-      });
+function quitarItem(id) {
+  document.getElementById(`item-${id}`)?.remove();
+  actualizarResumen();
+}
 
-      document.getElementById("totalCompra").textContent = total.toFixed(2);
-      document.getElementById("btnEnviar").disabled = items.length === 0 || !proveedorSelect.value;
-    }
+function recalcular(id) {
+  const cant   = parseFloat(document.getElementById(`cant-${id}`).value) || 0;
+  const costo  = parseFloat(document.getElementById(`costo-${id}`).value) || 0;
+  const margen = parseFloat(document.getElementById(`margen-${id}`).value) || margenDefecto;
+  const manual = parseFloat(document.getElementById(`pventa-${id}`).value) || 0;
+  const prev   = document.getElementById(`preview-${id}`);
+  const pvVal  = document.getElementById(`pv-val-${id}`);
 
-    function eliminarItem(index) {
-        items.splice(index, 1);
-        actualizarTabla();
-    }
+  if (cant > 0 && costo > 0) {
+    const costoUnit = costo / cant;
+    const pv = manual > 0 ? manual : costoUnit * (1 + margen / 100);
+    pvVal.textContent = 'C$ ' + pv.toFixed(2);
+    prev.style.display = 'flex';
+  } else {
+    prev.style.display = 'none';
+  }
+  actualizarResumen();
+}
 
-    function agregarItem() {
-      const nombre = document.getElementById("nombre").value.trim();
-      const precioInput = parseFloat(document.getElementById("precio").value); 
-      // AHORA TOMAMOS EL DATO DIRECTO
-      const cantidadTotalInput = parseInt(document.getElementById("cantidadTotal").value);
+function leerItems() {
+  const cards = document.querySelectorAll('.item-card');
+  return Array.from(cards).map(card => {
+    const id = card.id.replace('item-','');
+    return {
+      nombre:          document.getElementById(`nombre-${id}`).value.trim(),
+      presentacion:    document.getElementById(`pres-${id}`).value,
+      descripcion:     document.getElementById(`desc-${id}`).value.trim(),
+      cantidad:        parseInt(document.getElementById(`cant-${id}`).value) || 0,
+      costoLote:       parseFloat(document.getElementById(`costo-${id}`).value) || 0,
+      margen:          parseFloat(document.getElementById(`margen-${id}`).value) || margenDefecto,
+      precioVenta:     parseFloat(document.getElementById(`pventa-${id}`).value) || 0,
+      fechaVencimiento:document.getElementById(`vence-${id}`).value,
+      ubicacion:       document.getElementById(`ubic-${id}`).value.trim(),
+    };
+  });
+}
 
-      if (!nombre) return alert("Ingresa el nombre del medicamento");
-      if (!cantidadTotalInput || cantidadTotalInput <= 0) return alert("Ingresa la cantidad total de unidades");
-      if (!precioInput || precioInput <= 0) return alert("Ingresa el Costo Total");
+function actualizarResumen() {
+  const items  = leerItems();
+  const total  = items.reduce((s,i)=>s+i.costoLote, 0);
+  const res    = document.getElementById('resumen-compra');
+  const btn    = document.getElementById('btn-registrar');
+  const validos= items.filter(i=>i.nombre && i.cantidad > 0 && i.costoLote > 0);
+  btn.disabled = validos.length === 0 || !document.getElementById('sel-proveedor').value;
 
-      const item = {
-        nombreMedicamento: nombre,
-        presentacion: document.getElementById("presentacion").value,
-        cantidadTotal: cantidadTotalInput, // Valor directo
-        costoTotalLote: precioInput,  
-        ubicacionEstante: document.getElementById("estante").value.trim() || null,
-        fechaVencimiento: document.getElementById("vencimiento").value
-      };
+  if (!items.length || !items[0].nombre) {
+    res.innerHTML = '<div class="text-muted text-sm">Sin ítems aún</div>'; return;
+  }
+  res.innerHTML = items.map(i=>`
+    <div class="rc-row">
+      <span class="text-sm">${i.nombre||'—'} (${i.cantidad} u.)</span>
+      <span class="text-sm font-medium">${moneda(i.costoLote)}</span>
+    </div>`).join('') +
+    `<div class="rc-row rc-total"><span>Total compra</span><span>${moneda(total)}</span></div>`;
+}
 
-      if (!item.fechaVencimiento) return alert("Ingresa la fecha de vencimiento");
+async function registrarCompra() {
+  const idProveedor = document.getElementById('sel-proveedor').value;
+  if (!idProveedor) { toast('Selecciona un proveedor','warn'); return; }
+  const items = leerItems();
+  for (const it of items) {
+    if (!it.nombre)       { toast('Falta el nombre en algún ítem','warn'); return; }
+    if (!it.presentacion) { toast(`Selecciona la presentación de "${it.nombre}"`, 'warn'); return; }
+    if (it.cantidad <= 0) { toast(`Cantidad inválida en "${it.nombre}"`, 'warn'); return; }
+    if (it.costoLote <= 0){ toast(`Costo inválido en "${it.nombre}"`, 'warn'); return; }
+  }
+  const btn = document.getElementById('btn-registrar');
+  btn.disabled = true;
+  try {
+    const r = await fetch(`${API}/compras`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ idProveedor, idusuario: u.idusuario, items })
+    });
+    if (!r.ok) { const e=await r.json(); toast(e.error,'err'); btn.disabled=false; return; }
+    const d = await r.json();
+    toast(`Compra #${d.idcompra} registrada — Total: ${moneda(d.total)}`,'ok',4000);
+    // Limpiar
+    document.getElementById('items-list').innerHTML = '';
+    itemCount = 0;
+    agregarItem();
+    actualizarResumen();
+  } catch { toast('Error registrando compra','err'); btn.disabled=false; }
+}
 
-      items.push(item);
-      actualizarTabla();
-
-      // Limpiar campos
-      document.getElementById("nombre").value = "";
-      document.getElementById("precio").value = "";
-      document.getElementById("cantidadTotal").value = ""; // Limpiamos cantidad
-      document.getElementById("nombre").focus();
-    }
-
-    async function enviarCompra() {
-      if (items.length === 0) return;
-      if (!proveedorSelect.value) return mostrarMensaje("Selecciona un proveedor", "error");
-
-      const payload = {
-        idProveedor: proveedorSelect.value,
-        idUsuario: ID_USUARIO_ACTUAL,
-        items: items
-      };
-
-      const btn = document.getElementById("btnEnviar");
-      btn.disabled = true;
-      btn.textContent = "Procesando...";
-
-      try {
-        const res = await fetch("http://localhost:3000/compras", { 
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload)
-        });
-
-        const data = await res.json();
-        
-        if (res.ok) {
-          mostrarMensaje(`Compra registrada`, "exito");
-          items = [];
-          actualizarTabla();
-          proveedorSelect.value = "";
-        } else {
-          mostrarMensaje(data.error || "Error al guardar", "error");
-        }
-      } catch (err) {
-        console.error(err);
-        mostrarMensaje("Error de conexión", "error");
-      } finally {
-        btn.disabled = false;
-        btn.textContent = "Confirmar y Guardar Compra";
-      }
-    }
-
-    function mostrarMensaje(texto, tipo) {
-      const div = document.getElementById("mensaje");
-      div.textContent = texto;
-      div.className = `mensaje ${tipo}`;
-      div.style.display = "block";
-      setTimeout(() => div.style.display = "none", 6000);
-    }
-
-    cargarProveedores();
-  </script>
+init();
+</script>
 </body>
 </html>

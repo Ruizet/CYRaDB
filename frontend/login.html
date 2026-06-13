@@ -1,333 +1,69 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Login | Farmacia C&R</title>
-  <style>
-    :root {
-      --primary: #b23a48;
-      --primary-dark: #9b2d38;
-      --success: #28a745;
-      --danger: #dc3545;
-      --light: #f8f9fa;
-      --gray: #6c757d;
-      --border: #dee2e6;
-      --shadow: 0 12px 30px rgba(0, 0, 0, 0.15);
-      --radius: 16px;
-      --transition: all 0.3s ease;
-    }
-
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    body {
-      background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      min-height: 100vh;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 1rem;
-      color: #333;
-    }
-
-    .login-container {
-      width: 100%;
-      max-width: 400px;
-    }
-
-    .login-card {
-      background: white;
-      padding: 2.5rem;
-      border-radius: var(--radius);
-      box-shadow: var(--shadow);
-      text-align: center;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .logo {
-      margin-bottom: 1.8rem;
-    }
-
-    .logo h1 {
-      color: var(--primary);
-      font-size: 2rem;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-    }
-
-    .logo p {
-      color: #888;
-      font-size: 0.95rem;
-      margin-top: 0.3rem;
-    }
-
-    .form-group {
-      margin-bottom: 1.3rem;
-      position: relative;
-    }
-
-    label {
-      display: block;
-      text-align: left;
-      margin-bottom: 0.5rem;
-      font-weight: 600;
-      color: #444;
-      font-size: 0.95rem;
-    }
-
-    input {
-      width: 100%;
-      padding: 0.95rem 1rem;
-      font-size: 1rem;
-      border: 2px solid var(--border);
-      border-radius: 12px;
-      background: #fdfdfd;
-      transition: var(--transition);
-    }
-
-    input:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 4px rgba(178, 58, 72, 0.15);
-    }
-
-    input::placeholder {
-      color: #aaa;
-    }
-
-    .btn-login {
-      width: 100%;
-      padding: 1rem;
-      background: var(--primary);
-      color: white;
-      border: none;
-      border-radius: 12px;
-      font-size: 1.05rem;
-      font-weight: 600;
-      cursor: pointer;
-      margin-top: 0.5rem;
-      transition: var(--transition);
-      box-shadow: 0 6px 16px rgba(178, 58, 72, 0.3);
-    }
-
-    .btn-login:hover {
-      background: var(--primary-dark);
-      transform: translateY(-2px);
-    }
-
-    .btn-login:disabled {
-      background: #ccc;
-      cursor: not-allowed;
-      transform: none;
-    }
-
-    .mensaje {
-      margin-top: 1rem;
-      padding: 0.9rem;
-      border-radius: 10px;
-      font-weight: 600;
-      font-size: 0.95rem;
-      display: none;
-      animation: fadeIn 0.3s ease;
-    }
-
-    .exito {
-      background: #d4edda;
-      color: #155724;
-      border: 1px solid #c3e6cb;
-    }
-
-    .error {
-      background: #f8d7da;
-      color: #721c24;
-      border: 1px solid #f5c6cb;
-    }
-
-    .loading {
-      opacity: 0.7;
-      pointer-events: none;
-    }
-
-    .loading .btn-login::after {
-      content: "";
-      display: inline-block;
-      width: 16px;
-      height: 16px;
-      border: 2px solid #fff;
-      border-radius: 50%;
-      border-top-color: transparent;
-      animation: spin 0.8s linear infinite;
-      margin-left: 10px;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; }
-      to { opacity: 1; }
-    }
-
-    .footer {
-      margin-top: 2rem;
-      font-size: 0.85rem;
-      color: #aaa;
-      text-align: center;
-    }
-
-    .footer a {
-      color: var(--primary);
-      text-decoration: none;
-    }
-
-    .footer a:hover {
-      text-decoration: underline;
-    }
-
-    @media (max-width: 480px) {
-      .login-card {
-        padding: 2rem 1.5rem;
-      }
-      .logo h1 {
-        font-size: 1.8rem;
-      }
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Farmacia C&R</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="style.css">
+<style>
+body{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg)}
+.login-wrap{width:100%;max-width:380px;padding:1rem}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-lg);padding:2.25rem;box-shadow:var(--shadow-lg)}
+.login-logo{text-align:center;margin-bottom:1.75rem}
+.login-logo .lg-name{font-size:1.5rem;font-weight:600;color:var(--brand);letter-spacing:-.4px}
+.login-logo .lg-sub{font-size:.82rem;color:var(--text-3);margin-top:3px}
+.login-cross{width:44px;height:44px;background:var(--brand);border-radius:10px;display:flex;align-items:center;justify-content:center;margin:0 auto .75rem}
+.login-cross i{font-size:1.4rem;color:#fff}
+</style>
 </head>
 <body>
-  <div class="login-container">
-    <div class="login-card">
-      <div class="logo">
-        <h1>Farmacia C&R</h1>
-        <p>Sistema de Gestión</p>
-      </div>
-
-      <form id="loginForm">
-        <div class="form-group">
-          <label for="usuario">Usuario</label>
-          <input 
-            type="text" 
-            id="usuario" 
-            placeholder="Ingresa tu usuario" 
-            autocomplete="username"
-            required
-            tabindex="1"
-          >
-        </div>
-
-        <div class="form-group">
-          <label for="contrasena">Contraseña</label>
-          <input 
-            type="password" 
-            id="contrasena" 
-            placeholder="Ingresa tu contraseña" 
-            autocomplete="current-password"
-            required
-            tabindex="2"
-          >
-        </div>
-
-        <button type="submit" class="btn-login" id="btnLogin">
-          Ingresar
-        </button>
-      </form>
-
-      <div id="mensaje" class="mensaje"></div>
-
+<div class="login-wrap">
+  <div class="login-card">
+    <div class="login-logo">
+      <div class="login-cross"><i class="ti ti-building-hospital" aria-hidden="true"></i></div>
+      <div class="lg-name">Farmacia C&R</div>
+      <div class="lg-sub">Sistema de gestión</div>
     </div>
+    <div class="form-group">
+      <label class="form-label">Usuario</label>
+      <input type="text" class="form-control" id="usuario" autocomplete="username" placeholder="Tu usuario">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Contraseña</label>
+      <input type="password" class="form-control" id="contrasena" autocomplete="current-password" placeholder="Tu contraseña">
+    </div>
+    <div id="msg" style="display:none;margin-bottom:.75rem;padding:.55rem .75rem;border-radius:8px;font-size:.85rem"></div>
+    <button class="btn btn-primary btn-full btn-lg" id="btn-login" onclick="login()">
+      <i class="ti ti-login" aria-hidden="true"></i> Ingresar
+    </button>
   </div>
-
-  <script>
-    const form = document.getElementById("loginForm");
-    const usuarioInput = document.getElementById("usuario");
-    const contrasenaInput = document.getElementById("contrasena");
-    const btnLogin = document.getElementById("btnLogin");
-    const mensaje = document.getElementById("mensaje");
-
-    const inputs = [usuarioInput, contrasenaInput];
-
-    inputs.forEach((input, index) => {
-      input.addEventListener("keydown", (e) => {
-        if (e.key === "ArrowDown") {
-          e.preventDefault();
-          const next = inputs[index + 1];
-          if (next) next.focus();
-        }
-        if (e.key === "ArrowUp") {
-          e.preventDefault();
-          const prev = inputs[index - 1];
-          if (prev) prev.focus();
-        }
-      });
-    });
-
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      await login();
-    });
-
-    async function login() {
-      const usuario = usuarioInput.value.trim();
-      const contrasena = contrasenaInput.value;
-
-      if (!usuario || !contrasena) {
-        mostrarMensaje("Completa ambos campos", "error");
-        return;
-      }
-
-      btnLogin.disabled = true;
-      btnLogin.textContent = "Ingresando";
-      document.querySelector(".login-card").classList.add("loading");
-      ocultarMensaje();
-
-      try {
-        const res = await fetch("http://localhost:3000/usuarios/login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ usuario, contrasena })
-        });
-
-        const data = await res.json();
-
-        if (res.ok) {
-          localStorage.setItem("usuarioActual", JSON.stringify(data));
-          mostrarMensaje("Bienvenido", "exito");
-          setTimeout(() => {
-            window.location.href = "dashboard.html";
-          }, 800);
-        } else {
-          mostrarMensaje(data.error || "Usuario o contraseña incorrectos", "error");
-        }
-      } catch (err) {
-        console.error("Error de conexión:", err);
-        mostrarMensaje("Error de conexión. Intenta de nuevo.", "error");
-      } finally {
-        btnLogin.disabled = false;
-        btnLogin.textContent = "Ingresar";
-        document.querySelector(".login-card").classList.remove("loading");
-      }
-    }
-
-    function mostrarMensaje(texto, tipo) {
-      mensaje.textContent = texto;
-      mensaje.className = `mensaje ${tipo}`;
-      mensaje.style.display = "block";
-    }
-
-    function ocultarMensaje() {
-      mensaje.style.display = "none";
-    }
-
-    window.addEventListener("load", () => {
-      usuarioInput.focus();
-    });
-  </script>
+</div>
+<script src="app.js"></script>
+<script>
+document.getElementById('contrasena').addEventListener('keydown', e => { if(e.key==='Enter') login(); });
+async function login() {
+  const usuario   = document.getElementById('usuario').value.trim();
+  const contrasena= document.getElementById('contrasena').value;
+  const btn = document.getElementById('btn-login');
+  const msg = document.getElementById('msg');
+  if (!usuario||!contrasena) { showMsg('Completa ambos campos','err'); return; }
+  btn.disabled=true; btn.innerHTML='<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Ingresando…';
+  try {
+    const r = await fetch(`${API}/usuarios/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({usuario,contrasena})});
+    const d = await r.json();
+    if (r.ok) { localStorage.setItem('usuarioActual',JSON.stringify(d)); location.href='dashboard.html'; }
+    else showMsg(d.error||'Credenciales incorrectas','err');
+  } catch { showMsg('Sin conexión al servidor','err'); }
+  btn.disabled=false; btn.innerHTML='<i class="ti ti-login"></i> Ingresar';
+}
+function showMsg(t,tipo) {
+  const m=document.getElementById('msg');
+  m.textContent=t; m.style.display='block';
+  m.style.background=tipo==='err'?'var(--danger-bg)':'var(--success-bg)';
+  m.style.color=tipo==='err'?'var(--danger)':'var(--success)';
+}
+</script>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 </body>
 </html>
