@@ -1,456 +1,183 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Gestión de Usuarios | Farmacia C&R</title>
-  <style>
-    :root {
-      --primary: #b23a48;
-      --primary-dark: #9b2d38;
-      --success: #28a745;
-      --danger: #dc3545;
-      --warning: #ffc107;
-      --light: #f8f9fa;
-      --gray: #6c757d;
-      --border: #dee2e6;
-      --shadow: 0 8px 25px rgba(0, 0, 0, 0.12);
-      --radius: 14px;
-    }
-
-    * { margin: 0; padding: 0; box-sizing: border-box; }
-
-    body {
-      background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      min-height: 100vh;
-      padding: 1.5rem;
-      color: #333;
-    }
-
-    .container {
-      max-width: 1000px;
-      margin: 0 auto;
-    }
-
-    header {
-      text-align: center;
-      margin-bottom: 2rem;
-    }
-
-    header h1 {
-      color: var(--primary);
-      font-size: 2.2rem;
-      font-weight: 700;
-    }
-
-    header p {
-      color: #666;
-      font-size: 1rem;
-    }
-
-    /* === BOTÓN AÑADIR === */
-    .btn-add {
-      display: inline-flex;
-      align-items: center;
-      gap: 0.5rem;
-      background: var(--success);
-      color: white;
-      padding: 0.8rem 1.5rem;
-      border: none;
-      border-radius: var(--radius);
-      font-weight: 600;
-      cursor: pointer;
-      margin-bottom: 1.5rem;
-      transition: all 0.3s;
-      box-shadow: 0 4px 12px rgba(40, 167, 69, 0.3);
-    }
-
-    .btn-add:hover {
-      background: #218838;
-      transform: translateY(-2px);
-    }
-
-    /* === FORMULARIO MODAL === */
-    .modal {
-      display: none;
-      position: fixed;
-      top: 0; left: 0; right: 0; bottom: 0;
-      background: rgba(0,0,0,0.5);
-      align-items: center;
-      justify-content: center;
-      z-index: 1000;
-      padding: 1rem;
-    }
-
-    .modal.show { display: flex; }
-
-    .modal-content {
-      background: white;
-      padding: 2rem;
-      border-radius: var(--radius);
-      width: 100%;
-      max-width: 500px;
-      box-shadow: var(--shadow);
-    }
-
-    .modal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 1.5rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid #eee;
-    }
-
-    .modal-header h2 {
-      color: var(--primary);
-      font-size: 1.5rem;
-    }
-
-    .close {
-      background: none;
-      border: none;
-      font-size: 1.5rem;
-      cursor: pointer;
-      color: #aaa;
-    }
-
-    .close:hover { color: #333; }
-
-    .form-group {
-      margin-bottom: 1.2rem;
-    }
-
-    label {
-      display: block;
-      margin-bottom: 0.5rem;
-      font-weight: 600;
-      color: #333;
-    }
-
-    input, select {
-      width: 100%;
-      padding: 0.85rem;
-      border: 2px solid var(--border);
-      border-radius: 10px;
-      font-size: 1rem;
-      transition: all 0.2s;
-    }
-
-    input:focus, select:focus {
-      outline: none;
-      border-color: var(--primary);
-      box-shadow: 0 0 0 3px rgba(178, 58, 72, 0.15);
-    }
-
-    .btn-save {
-      background: var(--primary);
-      color: white;
-      border: none;
-      padding: 0.9rem;
-      width: 100%;
-      border-radius: 10px;
-      font-weight: 600;
-      cursor: pointer;
-      transition: all 0.3s;
-    }
-
-    .btn-save:hover {
-      background: var(--primary-dark);
-    }
-
-    /* === TABLA === */
-    .table-container {
-      background: white;
-      border-radius: var(--radius);
-      overflow: hidden;
-      box-shadow: var(--shadow);
-    }
-
-    table {
-      width: 100%;
-      border-collapse: collapse;
-    }
-
-    th {
-      background: linear-gradient(135deg, #ffe5e5, #ffd1d1);
-      color: var(--primary);
-      padding: 1rem;
-      text-align: center;
-      font-weight: 600;
-      font-size: 0.95rem;
-    }
-
-    td {
-      padding: 1rem;
-      text-align: center;
-      border-bottom: 1px solid #eee;
-    }
-
-    tr:hover {
-      background: #fdf2f2;
-    }
-
-    .btn-edit, .btn-delete {
-      padding: 0.4rem 0.8rem;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 0.9rem;
-      margin: 0 0.2rem;
-    }
-
-    .btn-edit {
-      background: var(--warning);
-      color: white;
-    }
-
-    .btn-edit:hover { background: #e0a800; }
-
-    .btn-delete {
-      background: var(--danger);
-      color: white;
-    }
-
-    .btn-delete:hover { background: #c82333; }
-
-    .btn-back {
-      display: block;
-      text-align: center;
-      margin: 2rem auto 0;
-      padding: 0.8rem 1.8rem;
-      background: var(--gray);
-      color: white;
-      text-decoration: none;
-      border-radius: 10px;
-      font-weight: 600;
-      width: fit-content;
-    }
-
-    .btn-back:hover {
-      background: #5a6268;
-    }
-
-    .no-access {
-      text-align: center;
-      padding: 3rem;
-      color: #dc3545;
-      font-size: 1.2rem;
-      font-weight: 600;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Usuarios | Farmacia C&R</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
-  <div class="container" id="mainContent" style="display: none;">
-    <header>
-      <h1>Gestión de Usuarios</h1>
-      <p>Administra empleados del sistema</p>
-    </header>
-
-    <button class="btn-add" onclick="abrirModal()">
-      Add Nuevo Empleado
-    </button>
-
-    <div class="table-container">
-      <table id="tablaUsuarios">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Nombre</th>
-            <th>Usuario</th>
-            <th>Rol</th>
-            <th>Acciones</th>
-          </tr>
-        </thead>
-        <tbody></tbody>
-      </table>
+<aside class="sidebar" id="sidebar"></aside>
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Gestión de usuarios</div>
+      <div class="topbar-sub" id="usr-count"></div>
     </div>
-
-    <a href="dashboard.html" class="btn-back">Volver al Dashboard</a>
+    <button class="btn btn-primary" onclick="abrirNuevo()">
+      <i class="ti ti-user-plus" aria-hidden="true"></i> Nuevo usuario
+    </button>
   </div>
-
-  <!-- Mensaje de acceso denegado -->
-  <div id="noAccess" class="no-access" style="display: none;">
-    <p>Acceso Denegado</p>
-    <p>Solo administradores pueden acceder a esta página.</p>
-    <br>
-    <a href="dashboard.html" style="color: var(--primary); text-decoration: underline;">Volver al Dashboard</a>
-  </div>
-
-  <!-- Modal -->
-  <div class="modal" id="modal">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h2 id="modalTitle">Añadir Empleado</h2>
-        <button class="close" onclick="cerrarModal()">×</button>
+  <div class="page">
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr><th>#</th><th>Nombre</th><th>Usuario</th><th>Rol</th><th></th></tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
       </div>
-      <form id="formUsuario">
-        <input type="hidden" id="idusuario">
+    </div>
+  </div>
+</div>
 
+<!-- Modal nuevo / editar -->
+<div class="modal-backdrop" id="modal-form">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">Nuevo usuario</span>
+      <button class="btn-icon" onclick="closeModal('modal-form')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-id">
+      <div class="form-row">
         <div class="form-group">
-          <label for="nombre">Nombre Completo *</label>
-          <input type="text" id="nombre" required>
+          <label class="form-label">Nombre completo *</label>
+          <input type="text" class="form-control" id="f-nombre" placeholder="Nombre">
         </div>
-
         <div class="form-group">
-          <label for="usuario">Nombre de Usuario *</label>
-          <input type="text" id="usuario" required>
+          <label class="form-label">Usuario *</label>
+          <input type="text" class="form-control" id="f-usuario" placeholder="login">
         </div>
-
+      </div>
+      <div class="form-row">
         <div class="form-group">
-          <label for="password">Contraseña *</label>
-          <input type="password" id="password" required>
+          <label class="form-label" id="pass-label">Contraseña *</label>
+          <input type="password" class="form-control" id="f-pass" placeholder="Contraseña">
         </div>
-
         <div class="form-group">
-          <label for="rol">Rol *</label>
-          <select id="rol" required>
+          <label class="form-label">Rol *</label>
+          <select class="form-control" id="f-rol">
             <option value="empleado">Empleado</option>
             <option value="administrador">Administrador</option>
           </select>
         </div>
-
-        <button type="submit" class="btn-save" id="btnGuardar">
-          Guardar Empleado
-        </button>
-      </form>
+      </div>
+      <div id="pass-hint" style="display:none;font-size:.78rem;color:var(--text-3);margin-top:-.5rem;margin-bottom:.5rem">
+        Dejar en blanco para conservar la contraseña actual.
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-form')">Cancelar</button>
+      <button class="btn btn-primary" onclick="guardar()">Guardar</button>
     </div>
   </div>
+</div>
 
-  <script>
-    const usuarioActual = JSON.parse(localStorage.getItem("usuarioActual") || "null");
-    const mainContent = document.getElementById("mainContent");
-    const noAccess = document.getElementById("noAccess");
-    const modal = document.getElementById("modal");
-    const form = document.getElementById("formUsuario");
-    const tbody = document.querySelector("#tablaUsuarios tbody");
+<div id="toast-area"></div>
+<script src="app.js"></script>
+<script>
+requireAuth('administrador');
+renderSidebar('usuarios');
+let todos = [];
 
-    if (!usuarioActual || usuarioActual.rol !== "administrador") {
-      noAccess.style.display = "block";
-    } else {
-      mainContent.style.display = "block";
-      cargarUsuarios();
-    }
+async function cargar() {
+  const r = await fetch(`${API}/usuarios`);
+  todos = await r.json();
+  document.getElementById('usr-count').textContent = `${todos.length} usuarios`;
+  renderTabla(todos);
+}
 
-    async function cargarUsuarios() {
-      try {
-        const res = await fetch("http://localhost:3000/usuarios");
-        const usuarios = await res.json();
-        tbody.innerHTML = "";
+function renderTabla(data) {
+  const tbody = document.getElementById('tbody');
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="5"><div class="empty-state"><i class="ti ti-users"></i><p>Sin usuarios</p></div></td></tr>`;
+    return;
+  }
+  const me = JSON.parse(localStorage.getItem('usuarioActual') || '{}');
+  tbody.innerHTML = data.map(usr => {
+    const rolChip = usr.rol === 'administrador'
+      ? '<span class="chip chip-danger">Administrador</span>'
+      : '<span class="chip chip-neutral">Empleado</span>';
+    const esSesion = usr.idusuario === me.idusuario;
+    return `<tr>
+      <td class="text-muted text-sm">${usr.idusuario}</td>
+      <td class="font-medium">${usr.nombre}${esSesion?' <span class="chip chip-info" style="font-size:.68rem">Tú</span>':''}</td>
+      <td><code style="font-size:.82rem;background:var(--surface-2);padding:2px 6px;border-radius:5px">${usr.usuario}</code></td>
+      <td>${rolChip}</td>
+      <td>
+        <div class="flex-center gap-sm">
+          <button class="btn-icon btn-sm" onclick='abrirEdit(${JSON.stringify(usr)})' title="Editar">
+            <i class="ti ti-edit"></i>
+          </button>
+          ${!esSesion ? `<button class="btn-icon btn-sm" onclick="eliminar(${usr.idusuario})" title="Eliminar">
+            <i class="ti ti-trash" style="color:var(--brand)"></i>
+          </button>` : ''}
+        </div>
+      </td>
+    </tr>`;
+  }).join('');
+}
 
-        usuarios.forEach(u => {
-          if (u.rol === "administrador" && u.idusuario !== usuarioActual.idusuario) return; // No editar otros admins
+function abrirNuevo() {
+  document.getElementById('edit-id').value    = '';
+  document.getElementById('f-nombre').value   = '';
+  document.getElementById('f-usuario').value  = '';
+  document.getElementById('f-pass').value     = '';
+  document.getElementById('f-rol').value      = 'empleado';
+  document.getElementById('modal-title').textContent = 'Nuevo usuario';
+  document.getElementById('pass-label').textContent  = 'Contraseña *';
+  document.getElementById('pass-hint').style.display = 'none';
+  openModal('modal-form');
+}
 
-          const fila = document.createElement("tr");
-          fila.innerHTML = `
-            <td><strong>#${u.idusuario}</strong></td>
-            <td>${u.nombre}</td>
-            <td>${u.usuario}</td>
-            <td><span style="padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.8rem; font-weight: 600; 
-              background: ${u.rol === 'administrador' ? '#d4edda' : '#fff3cd'}; 
-              color: ${u.rol === 'administrador' ? '#155724' : '#856404'}">
-              ${u.rol.toUpperCase()}
-            </span></td>
-            <td>
-              <button class="btn-edit" onclick="editarUsuario(${u.idusuario})">Edit</button>
-              <button class="btn-delete" onclick="eliminarUsuario(${u.idusuario}, '${u.usuario}')">Delete</button>
-            </td>
-          `;
-          tbody.appendChild(fila);
-        });
-      } catch (err) {
-        console.error("Error cargando usuarios:", err);
-      }
-    }
+function abrirEdit(usr) {
+  document.getElementById('edit-id').value    = usr.idusuario;
+  document.getElementById('f-nombre').value   = usr.nombre;
+  document.getElementById('f-usuario').value  = usr.usuario;
+  document.getElementById('f-pass').value     = '';
+  document.getElementById('f-rol').value      = usr.rol;
+  document.getElementById('modal-title').textContent = 'Editar usuario';
+  document.getElementById('pass-label').textContent  = 'Nueva contraseña';
+  document.getElementById('pass-hint').style.display = 'block';
+  openModal('modal-form');
+}
 
-    function abrirModal() {
-      form.reset();
-      document.getElementById("idusuario").value = "";
-      document.getElementById("modalTitle").textContent = "Añadir Empleado";
-      document.getElementById("password").required = true;
-      modal.classList.add("show");
-    }
+async function guardar() {
+  const id      = document.getElementById('edit-id').value;
+  const nombre  = document.getElementById('f-nombre').value.trim();
+  const usuario = document.getElementById('f-usuario').value.trim();
+  const password= document.getElementById('f-pass').value;
+  const rol     = document.getElementById('f-rol').value;
 
-    function cerrarModal() {
-      modal.classList.remove("show");
-    }
+  if (!nombre || !usuario)        { toast('Nombre y usuario son obligatorios','warn'); return; }
+  if (!id && !password)           { toast('La contraseña es obligatoria para usuarios nuevos','warn'); return; }
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      const id = document.getElementById("idusuario").value;
-      const data = {
-        nombre: document.getElementById("nombre").value.trim(),
-        usuario: document.getElementById("usuario").value.trim(),
-        password: document.getElementById("password").value,
-        rol: document.getElementById("rol").value
-      };
-
-      if (!data.nombre || !data.usuario || !data.password) {
-        alert("Todos los campos son obligatorios");
-        return;
-      }
-
-      try {
-        const url = id ? `http://localhost:3000/usuarios/${id}` : "http://localhost:3000/usuarios";
-        const method = id ? "PUT" : "POST";
-
-        const res = await fetch(url, {
-          method,
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(data)
-        });
-
-        if (res.ok) {
-          cerrarModal();
-          cargarUsuarios();
-          alert(id ? "Usuario actualizado" : "Usuario creado");
-        } else {
-          const err = await res.json();
-          alert(err.error || "Error");
-        }
-      } catch (err) {
-        alert("Error de conexión");
-      }
+  try {
+    const url    = id ? `${API}/usuarios/${id}` : `${API}/usuarios`;
+    const method = id ? 'PUT' : 'POST';
+    const r = await fetch(url, {
+      method,
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ nombre, usuario, password, rol })
     });
+    if (!r.ok) { const e = await r.json(); toast(e.error,'err'); return; }
+    toast(id ? 'Usuario actualizado' : 'Usuario creado','ok');
+    closeModal('modal-form');
+    cargar();
+  } catch { toast('Error guardando','err'); }
+}
 
-    window.editarUsuario = async (id) => {
-      try {
-        const res = await fetch(`http://localhost:3000/usuarios/${id}`);
-        const usuario = await res.json();
+async function eliminar(id) {
+  if (!confirm('¿Eliminar este usuario?')) return;
+  await fetch(`${API}/usuarios/${id}`, { method: 'DELETE' });
+  toast('Usuario eliminado','ok');
+  cargar();
+}
 
-        document.getElementById("idusuario").value = usuario.idusuario;
-        document.getElementById("nombre").value = usuario.nombre;
-        document.getElementById("usuario").value = usuario.usuario;
-        document.getElementById("rol").value = usuario.rol;
-        document.getElementById("password").required = false;
-        document.getElementById("modalTitle").textContent = "Editar Empleado";
-
-        modal.classList.add("show");
-      } catch (err) {
-        alert("Error al cargar usuario");
-      }
-    };
-
-    window.eliminarUsuario = async (id, nombre) => {
-      if (!confirm(`¿Eliminar al empleado "${nombre}"?`)) return;
-
-      try {
-        const res = await fetch(`http://localhost:3000/usuarios/${id}`, { method: "DELETE" });
-        if (res.ok) {
-          cargarUsuarios();
-          alert("Usuario eliminado");
-        } else {
-          alert("Error al eliminar");
-        }
-      } catch (err) {
-        alert("Error de conexión");
-      }
-    };
-
-    modal.addEventListener("click", (e) => {
-      if (e.target === modal) cerrarModal();
-    });
-  </script>
+cargar();
+</script>
 </body>
 </html>

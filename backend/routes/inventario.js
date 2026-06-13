@@ -1,72 +1,107 @@
-const express = require("express");
-const router = express.Router();
-const pool = require("../db");
+const express = require('express');
+const router  = express.Router();
+const pool    = require('../db');
 
-// 1. OBTENER TODOS LOS MEDICAMENTOS (Con Stock > 0)
-router.get("/", async (req, res) => {
+// GET /inventario  — listado completo con estados calculados (usa vista)
+router.get('/', async (req, res) => {
   try {
-    const result = await pool.query(`
-      SELECT 
-        idmedicamento, 
-        nombremedicamento, 
-        presentacion, 
-        cantidadlote,      -- La nueva columna de stock real
-        precioventa,       -- El precio calculado para el público
-        fechavencimiento, 
-        ubicacion_estante, -- Muy útil para farmacias
-        fechaingreso
-      FROM inventario
-      WHERE cantidadlote > 0 -- Solo mostramos lo que tiene stock
-      ORDER BY nombremedicamento ASC
-    `);
+    const result = await pool.query(
+      `SELECT * FROM v_inventario ORDER BY nombremedicamento ASC`
+    );
     res.json(result.rows);
   } catch (err) {
-    console.error("Error obteniendo inventario:", err.message);
-    res.status(500).json({ error: "Error del servidor" });
+    res.status(500).json({ error: err.message });
   }
 });
 
-// 2. BUSCAR MEDICAMENTOS (Por nombre o ID)
-router.get("/buscar", async (req, res) => {
-  const { nombre } = req.query; // Aunque se llame 'nombre', recibimos texto general
-  
-  try {
-    let query = `
-      SELECT 
-        idmedicamento, 
-        nombremedicamento, 
-        presentacion, 
-        cantidadlote, 
-        precioventa, 
-        fechavencimiento,
-        ubicacion_estante
-      FROM inventario
-      WHERE cantidadlote > 0 
-    `;
-    
-    let params = [];
-    
-    // Si envían texto, filtramos
-    if (nombre) {
-      // Verificamos si es un número (para buscar por ID)
-      if (!isNaN(nombre)) {
-        query += ` AND idmedicamento = $1`;
-        params.push(nombre);
-      } else {
-        // Si es texto, buscamos por nombre
-        query += ` AND (LOWER(nombremedicamento) LIKE LOWER($1) OR LOWER(presentacion) LIKE LOWER($1))`;
-        params.push(`%${nombre}%`);
-      }
-    }
-    
-    query += ` ORDER BY nombremedicamento ASC`;
+// GET /inventario/buscar?q=texto  — para autocompletado en ventas e ingreso
+// Devuelve agrupado por nombre (con todas sus presentaciones/lotes anidados)
+router.get('/buscar', async (req, res) => {
+  const { q = '', soloStock } = req.query;
+  const filtroStock = soloStock === '1' ? 'AND cantidadlote > 0' : '';
 
-    const result = await pool.query(query, params);
-    res.json(result.rows);
-    
+  try {
+    const result = await pool.query(
+      `SELECT
+         idmedicamento,
+         nombremedicamento,
+         presentacion,
+         descripcion,
+         cantidadlote,
+         precioventa,
+         margen_porcentaje,
+         fechavencimiento,
+         ubicacion_estante,
+         estado_vencimiento,
+         estado_stock
+       FROM v_inventario
+       WHERE LOWER(nombremedicamento) LIKE LOWER($1)
+          OR LOWER(presentacion)      LIKE LOWER($1)
+       ${filtroStock}
+       ORDER BY nombremedicamento ASC, fechavencimiento ASC NULLS LAST`,
+      [`%${q}%`]
+    );
+
+    // Agrupar por nombre para el acordeón de presentaciones en el POS
+    const grupos = {};
+    for (const row of result.rows) {
+      const key = row.nombremedicamento.toLowerCase();
+      if (!grupos[key]) {
+        grupos[key] = { nombre: row.nombremedicamento, lotes: [] };
+      }
+      grupos[key].lotes.push(row);
+    }
+
+    res.json(Object.values(grupos));
   } catch (err) {
-    console.error("Error buscando:", err.message);
-    res.status(500).json({ error: "Error en búsqueda" });
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /inventario/alertas  — proxy cómodo para el dashboard
+router.get('/alertas', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM v_alertas ORDER BY nivel DESC, descripcion ASC`
+    );
+    res.json(result.rows);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// GET /inventario/:id  — detalle de un lote
+router.get('/:id', async (req, res) => {
+  try {
+    const result = await pool.query(
+      'SELECT * FROM v_inventario WHERE idmedicamento = $1',
+      [req.params.id]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'No encontrado' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT /inventario/:id  — editar precio, margen o ubicación de un lote
+router.put('/:id', async (req, res) => {
+  const { precioventa, margen_porcentaje, ubicacion_estante, descripcion } = req.body;
+  try {
+    const result = await pool.query(
+      `UPDATE inventario SET
+         precioventa       = COALESCE($1, precioventa),
+         margen_porcentaje = COALESCE($2, margen_porcentaje),
+         ubicacion_estante = COALESCE($3, ubicacion_estante),
+         descripcion       = COALESCE($4, descripcion)
+       WHERE idmedicamento = $5
+       RETURNING *`,
+      [precioventa, margen_porcentaje, ubicacion_estante, descripcion, req.params.id]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'No encontrado' });
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 });
 
