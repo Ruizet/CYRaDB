@@ -4,7 +4,7 @@ const pool = new Pool({
   user: 'postgres',
   host: 'localhost',
   database: 'CYRaDB',
-  password: '1234',
+  password: 'josm4nyl4w',
   port: 5432,
 });
 
