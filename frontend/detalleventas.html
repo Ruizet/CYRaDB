@@ -1,141 +1,180 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <title>Detalle de Ventas | Farmacia C&R</title>
-  <style>
-    body { background: #f8f8f8; font-family: 'Segoe UI', sans-serif; margin: 0; padding: 0; display: flex; flex-direction: column; align-items: center; }
-    header { background: #b23a48; color: white; padding: 1rem; width: 100%; text-align: center; font-size: 1.5rem; font-weight: bold; }
-    
-    /* Contenedor más ancho para que quepa el detalle */
-    .container { margin-top: 2rem; background: white; padding: 2rem; border-radius: 12px; width: 95%; max-width: 1200px; box-shadow: 0 4px 10px rgba(0,0,0,0.1); }
-    
-    h2 { color: #b23a48; margin-bottom: 1rem; }
-    input { width: 100%; padding: 0.8rem; margin-bottom: 1rem; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; }
-    
-    table { width: 100%; border-collapse: collapse; margin-top: 1rem; font-size: 0.95rem; }
-    table th, table td { padding: 0.8rem; border: 1px solid #ddd; text-align: left; vertical-align: top; }
-    table th { background: #f3d0d3; color: #b23a48; text-align: center; }
-    
-    /* Estilos para la lista de productos dentro de la celda */
-    .lista-meds { list-style: none; padding: 0; margin: 0; font-size: 0.85rem; color: #555; }
-    .lista-meds li { 
-      margin-bottom: 4px; 
-      border-bottom: 1px dashed #eee; 
-      padding-bottom: 2px; 
-      display: flex; 
-      justify-content: space-between; /* Separa nombre y subtotal */
-    }
-    .lista-meds li:last-child { border-bottom: none; }
-    .badge-cant { background: #e9ecef; padding: 1px 6px; border-radius: 4px; font-weight: bold; color: #333; font-size: 0.8rem; margin-left: 5px; }
-
-    tr:nth-child(even) { background-color: #fcfcfc; }
-    
-    .btn-back { display: inline-block; margin-top: 1.5rem; padding: 0.8rem 1.8rem; background: #b23a48; color: white; text-decoration: none; border-radius: 10px; font-weight: 600; transition: all 0.3s; box-shadow: 0 4px 12px rgba(178, 58, 72, 0.3); }
-    .btn-back:hover { background: #9b2d38; transform: translateY(-2px); }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Historial de ventas | Farmacia C&R</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+<link rel="stylesheet" href="style.css">
+<style>
+.pago-chip{display:inline-flex;align-items:center;gap:.25rem;padding:.18rem .6rem;border-radius:20px;font-size:.75rem;font-weight:500}
+.pago-efectivo{background:#e8f5ee;color:#1a7f4e}
+.pago-tarjeta{background:#e6f0fb;color:#1a5fa0}
+.pago-transferencia{background:#fdf3e0;color:#a05a00}
+.items-detalle{font-size:.8rem;color:var(--text-2);margin-top:.35rem;line-height:1.6}
+#ticket-print{display:none}
+#ticket-print .t-sep{border:none;border-top:1px dashed #000;margin:4px 0}
+#ticket-print .t-center{text-align:center}
+#ticket-print .t-bold{font-weight:700}
+#ticket-print .t-row{display:flex;justify-content:space-between}
+#ticket-print .t-items{width:100%;border-collapse:collapse;font-size:11px}
+#ticket-print .t-items td{padding:1px 0}
+</style>
 </head>
 <body>
-  <header>Detalle de Ventas</header>
-  <div class="container">
-    <h2>Historial de Ventas</h2>
-    <input type="text" id="busqueda" placeholder="Buscar por ID, fecha o vendedor... (Enter)">
-
-    <table>
-      <thead>
-        <tr>
-          <th style="width: 80px;">ID</th>
-          <th style="width: 150px;">Fecha</th>
-          <th>Vendedor</th>
-          <th>Detalle Productos</th> <th style="width: 100px;">Pago</th>
-          <th style="width: 120px;">Total</th>
-        </tr>
-      </thead>
-      <tbody id="tablaVentas">
-        <tr><td colspan="6" style="text-align:center">Cargando ventas...</td></tr>
-      </tbody>
-    </table>
-    <div style="text-align: center;">
-      <a href="dashboard.html" class="btn-back">Volver al Dashboard</a>
+<aside class="sidebar" id="sidebar"></aside>
+<div class="main">
+  <div class="topbar">
+    <div>
+      <div class="topbar-title">Historial de ventas</div>
+      <div class="topbar-sub" id="venta-count"></div>
+    </div>
+    <div class="flex-center gap-sm">
+      <input type="text" class="form-control" style="width:220px" id="buscar" placeholder="Buscar…" oninput="filtrar()">
+      <button class="btn btn-ghost btn-sm" onclick="cargar()"><i class="ti ti-refresh" aria-hidden="true"></i></button>
     </div>
   </div>
+  <div class="page">
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Fecha</th>
+              <th>Cliente</th>
+              <th>Vendedor</th>
+              <th>Productos</th>
+              <th>Medio de pago</th>
+              <th>Total</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="tbody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
 
-  <script>
-    async function mostrarVentas(data) {
-      const tabla = document.getElementById("tablaVentas");
-      tabla.innerHTML = "";
+<!-- Modal ticket reimpresión -->
+<div class="modal-backdrop" id="modal-ticket">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <span class="modal-title"><i class="ti ti-receipt" aria-hidden="true"></i> Ticket de venta</span>
+      <button class="btn-icon" onclick="closeModal('modal-ticket')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div id="ticket-print"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-ticket')">Cerrar</button>
+      <button class="btn btn-primary" onclick="imprimirTicket(document.getElementById('ticket-print').innerHTML)">
+        <i class="ti ti-printer" aria-hidden="true"></i> Imprimir
+      </button>
+    </div>
+  </div>
+</div>
 
-      if (!Array.isArray(data) || data.length === 0) {
-        tabla.innerHTML = `<tr><td colspan="6" style="text-align:center">⚠️ No se encontraron registros</td></tr>`;
-        return;
-      }
+<div id="toast-area"></div>
+<script src="app.js"></script>
+<script>
+const u = requireAuth();
+renderSidebar('detalleventas');
+let todas = [];
+let cfg   = {};
 
-      data.forEach(v => {
-        // 1. Construir la lista de productos (HTML)
-        let htmlProductos = '<ul class="lista-meds">';
-        
-        // Verificamos si hay items en el JSON que manda el backend
-        if (v.items && v.items.length > 0) {
-          v.items.forEach(item => {
-             // Si es una venta vieja sin subtotal guardado, no mostramos el precio individual
-             const sub = item.subtotal ? `C$ ${parseFloat(item.subtotal).toFixed(2)}` : '';
-             
-             htmlProductos += `
-                <li>
-                  <span>${item.nombre} <span class="badge-cant">x${item.cantidad}</span></span>
-                  <span style="font-size:0.8rem; color:#888;">${sub}</span>
-                </li>`;
-          });
-        } else {
-          htmlProductos += '<li>Sin detalle</li>';
-        }
-        htmlProductos += '</ul>';
+async function cargar() {
+  try {
+    const [rv, rc] = await Promise.all([
+      fetch(`${API}/ventas`),
+      fetch(`${API}/config`)
+    ]);
+    todas = await rv.json();
+    cfg   = await rc.json();
+    document.getElementById('venta-count').textContent = `${todas.length} ventas registradas`;
+    filtrar();
+  } catch { toast('Error cargando ventas','err'); }
+}
 
-        // 2. Formato de fecha amigable
-        const fecha = new Date(v.fecha).toLocaleDateString() + ' ' + new Date(v.fecha).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+function filtrar() {
+  const q = document.getElementById('buscar').value.toLowerCase();
+  const data = !q ? todas : todas.filter(v =>
+    String(v.idventa).includes(q) ||
+    (v.nombre_cliente||'').toLowerCase().includes(q) ||
+    (v.usuario||'').toLowerCase().includes(q) ||
+    (v.mediopago||'').toLowerCase().includes(q)
+  );
+  renderTabla(data);
+}
 
-        const fila = `
-          <tr>
-            <td style="text-align:center; font-weight:bold;">#${v.idventa}</td>
-            <td style="text-align:center; font-size:0.9rem;">${fecha}</td>
-            <td>${v.usuario || 'Desconocido'}</td>
-            <td>${htmlProductos}</td> <td style="text-align:center; text-transform:capitalize;">${v.mediopago}</td>
-            <td style="text-align:right; font-weight:bold; color:#b23a48;">C$ ${parseFloat(v.totalcobro).toFixed(2)}</td>
-          </tr>`;
-        tabla.innerHTML += fila;
-      });
-    }
+function renderTabla(data) {
+  const tbody = document.getElementById('tbody');
+  if (!data.length) {
+    tbody.innerHTML = `<tr><td colspan="8"><div class="empty-state"><i class="ti ti-receipt"></i><p>Sin ventas</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = data.map(v => {
+    const items = Array.isArray(v.items) ? v.items : [];
+    const resumen = items.slice(0,2).map(i=>`${i.nombre} ×${i.cantidad}`).join(', ') + (items.length>2?` y ${items.length-2} más`:'');
+    const pagoClass = {efectivo:'pago-efectivo',tarjeta:'pago-tarjeta',transferencia:'pago-transferencia'}[v.mediopago]||'';
+    return `<tr>
+      <td class="font-medium text-brand">#${v.idventa}</td>
+      <td>${fechaHora(v.fecha)}</td>
+      <td>${v.nombre_cliente||'—'}</td>
+      <td>${v.usuario}</td>
+      <td>
+        <div class="font-medium text-sm">${items.length} producto(s)</div>
+        <div class="items-detalle">${resumen||'—'}</div>
+      </td>
+      <td><span class="pago-chip ${pagoClass}">${v.mediopago}</span></td>
+      <td class="font-semi">C$ ${parseFloat(v.totalcobro).toFixed(2)}</td>
+      <td>
+        <button class="btn-icon btn-sm" onclick="reimprimir(${v.idventa})" title="Ver ticket">
+          <i class="ti ti-printer"></i>
+        </button>
+      </td>
+    </tr>`;
+  }).join('');
+}
 
-    async function cargarVentas() {
-      try {
-        const res = await fetch("http://localhost:3000/ventas");
-        const data = await res.json();
-        mostrarVentas(data);
-      } catch (err) {
-        console.error("Error:", err);
-        document.getElementById("tablaVentas").innerHTML = `<tr><td colspan="6" style="text-align:center">❌ Error al cargar ventas</td></tr>`;
-      }
-    }
+async function reimprimir(idventa) {
+  try {
+    const r  = await fetch(`${API}/ventas/${idventa}`);
+    const v  = await r.json();
+    const items = Array.isArray(v.items) ? v.items : [];
+    const nombre_farm = cfg.nombre_farmacia || 'Farmacia C&R';
+    const dir  = cfg.direccion || '';
+    const tel  = cfg.telefono  || '';
+    const fecha = fechaHora(v.fecha);
+    const filas = items.map(i=>`<tr>
+      <td>${i.nombre}</td>
+      <td style="text-align:center">×${i.cantidad}</td>
+      <td style="text-align:right">C$ ${parseFloat(i.subtotal).toFixed(2)}</td>
+    </tr>`).join('');
+    document.getElementById('ticket-print').innerHTML = `
+      <div class="t-center"><div class="t-bold" style="font-size:14px">${nombre_farm}</div>
+        ${dir?`<div>${dir}</div>`:''}${tel?`<div>Tel: ${tel}</div>`:''}
+      </div>
+      <hr class="t-sep">
+      <div class="t-row"><span>Venta #${v.idventa}</span><span>${fecha}</span></div>
+      <div>Cliente: ${v.nombre_cliente||'Cliente'}</div>
+      <div>Vendedor: ${v.usuario}</div>
+      <hr class="t-sep">
+      <table class="t-items">
+        <thead><tr><th style="text-align:left">Producto</th><th style="text-align:center">Cant</th><th style="text-align:right">Monto</th></tr></thead>
+        <tbody>${filas}</tbody>
+      </table>
+      <hr class="t-sep">
+      <div class="t-row t-bold"><span>TOTAL</span><span>C$ ${parseFloat(v.totalcobro).toFixed(2)}</span></div>
+      <div>Pago: ${v.mediopago}</div>
+      <hr class="t-sep">
+      <div class="t-center" style="font-size:10px;margin-top:4px">¡Gracias por su compra!</div>`;
+    openModal('modal-ticket');
+  } catch { toast('Error cargando ticket','err'); }
+}
 
-    async function buscarVentas(texto) {
-      try {
-        const res = await fetch(`http://localhost:3000/ventas/vbuscar?texto=${encodeURIComponent(texto)}`);
-        if (!res.ok) return alert("❌ Error al buscar");
-        const data = await res.json();
-        mostrarVentas(data);
-      } catch (err) {
-        console.error(err);
-      }
-    }
-
-    document.getElementById("busqueda").addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        const texto = e.target.value.trim();
-        texto.length > 0 ? buscarVentas(texto) : cargarVentas();
-      }
-    });
-
-    cargarVentas();
-  </script>
+cargar();
+</script>
 </body>
 </html>
