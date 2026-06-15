@@ -13,6 +13,8 @@ app.use('/inventario',  require('./routes/inventario'));
 app.use('/ventas',      require('./routes/ventas'));
 app.use('/sesiones',    require('./routes/sesiones'));
 app.use('/compras',     require('./routes/compras'));
+app.use('/caja', require('./routes/caja'));
+app.use('/detallecaja', require('./routes/detallecaja'));
 app.use('/proveedores', require('./routes/proveedores'));
 app.use('/dashboard',   require('./routes/dashboard'));
 app.use('/config',      require('./routes/config'));

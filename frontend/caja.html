@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Control de Gaveta | Farmacia C&R</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .caja-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid var(--border-soft);
+            font-size: 0.9rem;
+        }
+        .info-row:last-of-type {
+            border-bottom: none;
+            margin-bottom: 1rem;
+        }
+        .info-val {
+            font-weight: 600;
+            color: var(--text-1);
+        }
+        .total-box {
+            background: var(--surface-2);
+            border: 1px dashed var(--border);
+            border-radius: var(--radius);
+            padding: 1rem;
+            margin-bottom: 1.25rem;
+            text-align: center;
+        }
+        .total-box .monto-esperado {
+            font-size: 1.75rem;
+            font-weight: 600;
+            color: var(--brand);
+            margin-top: 0.25rem;
+        }
+    </style>
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar"></aside>
+
+<div class="main">
+    <div class="topbar">
+        <div>
+            <div class="topbar-title">Control de Gaveta de Efectivo</div>
+            <div class="topbar-sub">Apertura, arqueo y cierre de turnos diarios</div>
+        </div>
+        <div id="caja-status-chip"></div>
+    </div>
+
+    <div class="page">
+        <div class="caja-container">
+            
+            <div id="wrapper-apertura" class="card card-body" style="display: none;">
+                <h3 class="mb-md" style="font-size: 1.1rem; font-weight: 600;">Abrir Turno de Gaveta</h3>
+                
+                <div id="alerta-custodia" class="total-box" style="display:none; background: var(--warning-bg); border-color: var(--warning); text-align: left; padding: 1rem;">
+                    <p class="font-semi text-sm" style="color: var(--warning); display: flex; align-items: center; gap: 4px;">
+                        <i class="ti ti-alert-triangle"></i> Verificación de Entrega de Turno
+                    </p>
+                    <p class="text-sm mt-sm" style="color: var(--text-2)">
+                        El turno anterior cerró reportando que dejó un saldo físico en gaveta de:
+                    </p>
+                    <div class="monto-esperado" id="txt-saldo-anterior" style="font-size: 1.5rem; color: var(--text-1); text-align: left;">C$ 0.00</div>
+                    <p class="text-muted text-sm mt-sm">Por favor, cuenta el dinero de la gaveta física y confirma si coincide.</p>
+                </div>
+
+                <p class="text-muted text-sm mb-lg" id="p-apertura-normal">Para comenzar a facturar ventas, ingresa el dinero en efectivo disponible en la gaveta física para dar cambio/vuelto.</p>
+                
+                <div class="form-group">
+                    <label class="form-label">Monto Inicial de Apertura (C$)</label>
+                    <input type="number" id="monto-apertura" class="form-control" placeholder="0.00" min="0" step="0.01">
+                </div>
+
+                <div class="form-group" id="group-obs-apertura" style="display: none;">
+                    <label class="form-label" style="color: var(--warning); font-weight: 600;">¿Por qué no coincide con el turno anterior? (Obligatorio)</label>
+                    <textarea id="obs-apertura" class="form-control" rows="2" placeholder="Ej: Faltaban C$ 10.00 en físico respecto al reporte del sistema..."></textarea>
+                </div>
+                
+                <button class="btn btn-primary btn-full mt-md" id="btn-abrir" onclick="abrirCaja()">
+                    <i class="ti ti-cash" aria-hidden="true"></i> Abrir Gaveta e Iniciar Turno
+                </button>
+            </div>
+
+            <div id="wrapper-cierre" class="card card-body" style="display: none;">
+                <h3 class="mb-md" style="font-size: 1.1rem; font-weight: 600;">Resumen del Turno Activo</h3>
+                
+                <div class="info-row"><span>Cajero responsable:</span><span class="info-val" id="txt-usuario">—</span></div>
+                <div class="info-row"><span>Fecha/Hora de apertura:</span><span class="info-val" id="txt-fecha-apertura">—</span></div>
+                <div class="info-row"><span>Monto inicial de apertura:</span><span class="info-val" id="txt-monto-apertura">C$ 0.00</span></div>
+                <div class="info-row"><span>Ventas registradas en el sistema:</span><span class="info-val text-brand" id="txt-monto-ventas">C$ 0.00</span></div>
+                
+                <div class="total-box">
+                    <div class="text-muted text-sm">Saldo que debería haber en la gaveta (Esperado):</div>
+                    <div class="monto-esperado" id="txt-total-esperado">C$ 0.00</div>
+                </div>
+
+                <hr class="mb-lg" style="border: 0; border-top: 1px solid var(--border)">
+                <h3 class="mb-md" style="font-size: 1rem; font-weight: 600;">Arqueo y Cierre de Gaveta</h3>
+
+                <div class="form-group">
+                    <label class="form-label">Efectivo físico real contado en gaveta (C$)</label>
+                    <input type="number" id="monto-cierre-real" class="form-control" placeholder="Cuenta todo el dinero físico de la gaveta" min="0" step="0.01">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Observaciones / Justificación de descuadres (Opcional)</label>
+                    <textarea id="observaciones-caja" class="form-control" rows="3" placeholder="Ej: Hicieron falta C$ 5.00 por falta de monedas para cambio..."></textarea>
+                </div>
+
+                <button class="btn btn-primary btn-full btn-lg mt-md" id="btn-cerrar" onclick="cerrarCaja()" style="background-color: var(--brand); color: #fff;">
+                    <i class="ti ti-lock" aria-hidden="true"></i> Cuadrar y Cerrar Gaveta
+                </button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+const u = requireAuth(); 
+renderSidebar('caja');
+
+let sesionCajaActiva = null;
+let saldoAnteriorReportado = 0;
+let mostrarAlertaCustodia = false; // Variable global de control
+
+function moneda(valor) {
+    return 'C$ ' + parseFloat(valor || 0).toFixed(2);
+}
+
+function fechaHora(isoString) {
+    if (!isoString) return '—';
+    const d = new Date(isoString);
+    return d.toLocaleDateString('es-NI') + ' ' + d.toLocaleTimeString('es-NI', { hour: '2-digit', minute: '2-digit' });
+}
+
+async function initCaja() {
+    if (!u) return;
+    try {
+        console.log("🔄 Verificando estado de la gaveta...");
+        const r = await fetch(`${API}/caja/estado/${u.idusuario}`);
+        const data = await r.json();
+        
+        console.log("📦 Datos de la gaveta recibidos:", data);
+
+        const statusChip = document.getElementById('caja-status-chip');
+        const viewApertura = document.getElementById('wrapper-apertura');
+        const viewCierre = document.getElementById('wrapper-cierre');
+
+        if (data && data.activa === true) {
+            sesionCajaActiva = data.datos || {};
+
+            const montoApertura = parseFloat(sesionCajaActiva.monto_apertura || 0);
+            const montoVentas = parseFloat(sesionCajaActiva.monto_ventas || 0);
+            const totalEsperado = montoApertura + montoVentas;
+
+            if (statusChip) statusChip.innerHTML = `<span class="chip chip-success"><i class="ti ti-circle-check"></i> Turno Activo</span>`;
+            
+            const elUsuario = document.getElementById('txt-usuario');
+            const elFecha = document.getElementById('txt-fecha-apertura');
+            const elMontoAp = document.getElementById('txt-monto-apertura');
+            const elMontoVe = document.getElementById('txt-monto-ventas');
+            const elTotalEsp = document.getElementById('txt-total-esperado');
+
+            if (elUsuario) elUsuario.textContent = u.nombre || 'Usuario';
+            if (elFecha) elFecha.textContent = fechaHora(sesionCajaActiva.fecha_apertura);
+            if (elMontoAp) elMontoAp.textContent = moneda(montoApertura);
+            if (elMontoVe) elMontoVe.textContent = moneda(montoVentas);
+            if (elTotalEsp) elTotalEsp.textContent = moneda(totalEsperado);
+
+            if (viewApertura) viewApertura.style.display = 'none';
+            if (viewCierre) viewCierre.style.display = 'block';
+
+        } else {
+            if (statusChip) statusChip.innerHTML = `<span class="chip chip-danger"><i class="ti ti-circle-x"></i> Turno Cerrado</span>`;
+            
+            const rUltimo = await fetch(`${API}/caja/ultimo-cierre-general`);
+            const ultimo = await rUltimo.json();
+
+            const alertaCustodia = document.getElementById('alerta-custodia');
+            const inputApertura = document.getElementById('monto-apertura');
+            const groupObs = document.getElementById('group-obs-apertura');
+            const txtSaldoAnterior = document.getElementById('txt-saldo-anterior');
+
+            if (ultimo && ultimo.monto_cierre !== undefined && ultimo.monto_cierre !== null) {
+                saldoAnteriorReportado = parseFloat(ultimo.monto_cierre);
+                mostrarAlertaCustodia = true; // Seteamos el estado de custodia global
+                
+                if (txtSaldoAnterior) txtSaldoAnterior.textContent = moneda(saldoAnteriorReportado);
+                if (inputApertura) inputApertura.value = saldoAnteriorReportado.toFixed(2);
+                if (alertaCustodia) alertaCustodia.style.display = 'block';
+                
+                if (inputApertura) {
+                    inputApertura.oninput = () => {
+                        const actual = parseFloat(inputApertura.value) || 0;
+                        if (Math.abs(actual - saldoAnteriorReportado) > 0.01) {
+                            if (groupObs) groupObs.style.display = 'block';
+                        } else {
+                            if (groupObs) groupObs.style.display = 'none';
+                        }
+                    };
+                }
+            } else {
+                mostrarAlertaCustodia = false;
+                if (alertaCustodia) alertaCustodia.style.display = 'none';
+                if (groupObs) groupObs.style.display = 'none';
+                if (inputApertura) inputApertura.value = '';
+            }
+
+            sesionCajaActiva = null;
+            if (viewCierre) viewCierre.style.display = 'none';
+            if (viewApertura) viewApertura.style.display = 'block';
+        }
+    } catch (err) {
+        console.error('❌ Error controlado en initCaja():', err);
+        toast('Error al renderizar los datos de control de la gaveta', 'err');
+    }
+}
+
+async function abrirCaja() {
+    const montoInput = document.getElementById('monto-apertura').value.trim();
+    const obsInput = document.getElementById('obs-apertura')?.value.trim() || '';
+    const btn = document.getElementById('btn-abrir');
+    
+    if (!montoInput || parseFloat(montoInput) < 0) return toast('Monto de apertura inválido', 'warn');
+
+    const montoApertura = parseFloat(montoInput);
+    let idDescripcionFinal = 'Apertura de turno estándar.';
+
+    // 🌟 Evaluación limpia usando la bandera global corregida
+    if (mostrarAlertaCustodia && Math.abs(montoApertura - saldoAnteriorReportado) > 0.01) {
+        if (!obsInput) {
+            toast('Debes justificar la diferencia con el turno anterior en observaciones', 'warn');
+            return;
+        }
+        idDescripcionFinal = `Descuadre en entrega de turno. Reportado anterior: ${moneda(saldoAnteriorReportado)}. Físico real encontrado por el nuevo cajero: ${moneda(montoApertura)}. Motivo: ${obsInput}`;
+    }
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Abriendo turno...';
+
+    try {
+        const r = await fetch(`${API}/caja/abrir`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                idusuario: u.idusuario, 
+                montoApertura: montoApertura,
+                descripcionObs: idDescripcionFinal
+            })
+        });
+        
+        if (r.ok) { 
+            toast('¡Gaveta verificada y abierta con éxito!', 'ok'); 
+            await initCaja(); 
+        } else {
+            const e = await r.json();
+            toast(e.error || 'No se pudo abrir la gaveta', 'err');
+        }
+    } catch { 
+        toast('Error de red al conectar con el servidor', 'err'); 
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ti ti-cash"></i> Abrir Gaveta e Iniciar Turno';
+    }
+}
+
+async function cerrarCaja() {
+    const montoRealInput = document.getElementById('monto-cierre-real').value.trim();
+    const observaciones = document.getElementById('observaciones-caja').value.trim();
+    const btn = document.getElementById('btn-cerrar');
+
+    if (!montoRealInput || parseFloat(montoRealInput) < 0) {
+        toast('Ingresa el total de dinero físico contado en la gaveta', 'warn');
+        return;
+    }
+
+    if (!sesionCajaActiva) {
+        toast('No se encontró ninguna sesión de gaveta activa vinculada', 'err');
+        return;
+    }
+
+    const esperado = parseFloat(sesionCajaActiva.monto_apertura) + parseFloat(sesionCajaActiva.monto_ventas);
+    const diferencia = parseFloat(montoRealInput) - esperado;
+    
+    if (Math.abs(diferencia) > 0.01 && !observaciones) {
+        toast('Hay un descuadre en el efectivo. Describe el motivo en observaciones.', 'warn');
+        return;
+    }
+
+    if (!confirm('¿Estás seguro de que deseas cerrar la gaveta y terminar tu turno actual?')) return;
+
+    btn.disabled = true;
+    btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Guardando arqueo...';
+
+    try {
+        const r = await fetch(`${API}/caja/cerrar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                idcaja_sesion: sesionCajaActiva.idcaja_sesion,
+                idusuario: u.idusuario,
+                montoCierreReal: parseFloat(montoRealInput),
+                observaciones: observaciones
+            })
+        });
+
+        if (r.ok) {
+            toast('Gaveta cerrada de forma segura. Turno terminado.', 'ok');
+            document.getElementById('monto-cierre-real').value = '';
+            document.getElementById('observaciones-caja').value = '';
+            await initCaja();
+        } else {
+            const e = await r.json();
+            toast(e.error || 'No se pudo procesar el cierre', 'err');
+        }
+    } catch {
+        toast('Error al conectar con el servidor', 'err');
+    } finally {
+        btn.disabled = false;
+        btn.innerHTML = '<i class="ti ti-lock"></i> Cuadrar y Cerrar Gaveta';
+    }
+}
+
+initCaja();
+</script>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
+</body>
+</html>

@@ -1,6 +1,7 @@
 const express = require('express');
 const router  = express.Router();
 const pool    = require('../db');
+const { Resend } = require('resend');
 
 // GET /usuarios
 router.get('/', async (req, res) => {
@@ -107,6 +108,97 @@ router.delete('/:id', async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     res.status(500).json({ error: err.message });
+  }
+});
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+router.post('/recuperar-password', async (req, res) => {
+  const { correo } = req.body;
+
+  if (!correo) {
+    return res.status(400).json({ error: 'El correo es requerido' });
+  }
+
+  try {
+    const codigoVerificacion = Math.floor(100000 + Math.random() * 900000).toString();
+    await pool.query(
+      `UPDATE usuario 
+      SET codigo_recuperacion = $1, 
+          codigo_expira = NOW() + INTERVAL '15 minutes' 
+      WHERE correo = $2`, 
+      [codigoVerificacion, correo]
+    );
+
+    const { data, error } = await resend.emails.send({
+      from: 'Farmacia C&R <onboarding@resend.dev>',
+      to: correo,
+      subject: 'Código de recuperación de contraseña - Farmacia C&R',
+      html: `
+        <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px;">
+          <h2 style="color: #0284c7; text-align: center;">Farmacia C&R</h2>
+          <p>Hola,</p>
+          <p>Has solicitado restablecer tu contraseña para el sistema de gestión <strong> C&RaDB</strong>. Usa el siguiente código de verificación de un solo uso:</p>
+          <div style="background-color: #f1f5f9; font-size: 24px; font-weight: bold; text-align: center; letter-spacing: 4px; padding: 15px; margin: 20px 0; border-radius: 6px; color: #1e293b;">
+            ${codigoVerificacion}
+          </div>
+          <p style="font-size: 12px; color: #64748b;">Este código expirará en 15 minutos.</p>
+        </div>
+      `,
+    });
+
+    if (error) {
+      console.error('Error de Resend:', error);
+      return res.status(400).json({ error: 'No se pudo despachar el correo' });
+    }
+
+    res.json({ mensaje: 'Código enviado con éxito' });
+
+  } catch (error) {
+    console.error('Error en recuperar-password:', error);
+    res.status(500).json({ error: 'Error interno en el servidor' });
+  }
+});
+
+router.post('/restablecer-password', async (req, res) => {
+  const { correo, codigo, nuevaClave } = req.body;
+
+  if (!correo || !codigo || !nuevaClave) {
+    return res.status(400).json({ error: 'Todos los campos son obligatorios' });
+  }
+
+  try {
+    const resultado = await pool.query(
+      `SELECT idusuario 
+       FROM usuario 
+       WHERE correo = $1 
+         AND codigo_recuperacion = $2 
+         AND NOW() < codigo_expira`, 
+      [correo, codigo]
+    );
+
+    if (resultado.rows.length === 0) {
+      return res.status(400).json({ 
+        error: 'El código es incorrecto, no coincide con el usuario o ya ha caducado.' 
+      });
+    }
+
+    const idUsuario = resultado.rows[0].idusuario;
+
+    await pool.query(
+      `UPDATE usuario 
+       SET contrasena = $1, 
+           codigo_recuperacion = NULL, 
+           codigo_expira = NULL 
+       WHERE idusuario = $2`,
+      [nuevaClave, idUsuario]
+    );
+
+    res.json({ mensaje: 'Contraseña actualizada correctamente' });
+
+  } catch (error) {
+    console.error('Error en restablecer-password:', error);
+    res.status(500).json({ error: 'Error interno en el servidor' });
   }
 });
 

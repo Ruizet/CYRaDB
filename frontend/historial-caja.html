@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Auditoría de Gaveta | Farmacia C&R</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.19.0/dist/tabler-icons.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<aside class="sidebar" id="sidebar"></aside>
+
+<div class="main">
+    <div class="topbar">
+        <div>
+            <div class="topbar-title">Historial Detallado de Gaveta</div>
+            <div class="topbar-sub">Auditoría completa de movimientos de efectivo de la farmacia</div>
+        </div>
+    </div>
+
+    <div class="page">
+        <div class="card">
+            <div class="card-header">
+                <div class="card-title"><i class="ti ti-report-money"></i> Libro de Movimientos Físicos</div>
+            </div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Fecha/Hora</th>
+                            <th>Cajero</th>
+                            <th>Operación</th>
+                            <th>Monto</th>
+                            <th>Descripción / Justificación de Evento</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tbody-movimientos">
+                        </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="app.js"></script>
+<script>
+const u = requireAuth();
+renderSidebar('historial-caja'); // Clave del sidebar
+
+function moneda(v) { return 'C$ ' + parseFloat(v).toFixed(2); }
+
+async function cargarBitacora() {
+    try {
+        const r = await fetch(`${API}/detallecaja`); 
+        
+        if (!r.ok) {
+            console.error(`Error en la petición: Estado ${r.status}`);
+            return;
+        }
+
+        const detalles = await r.json();
+        const tbody = document.getElementById('tbody-movimientos');
+        tbody.innerHTML = '';
+
+        detalles.forEach(d => {
+            // Estilizar la etiqueta de operación según el tipo de movimiento
+            let badgeClass = 'chip-neutral';
+            if (d.tipo_movimiento === 'apertura') badgeClass = 'chip-info';
+            if (d.tipo_movimiento === 'venta') badgeClass = 'chip-success';
+            if (d.tipo_movimiento === 'reapertura') badgeClass = 'chip-warning';
+            if (d.tipo_movimiento === 'cierre_desconocido') badgeClass = 'chip-danger';
+
+            const fecha = new Date(d.fecha_movimiento).toLocaleString('es-NI');
+
+            tbody.innerHTML += `
+                <tr>
+                    <td class="text-muted">${fecha}</td>
+                    <td class="font-medium">${d.cajero}</td>
+                    <td><span class="chip ${badgeClass}">${d.tipo_movimiento.toUpperCase()}</span></td>
+                    <td class="font-semi ${d.tipo_movimiento === 'venta' ? 'text-brand' : ''}">${moneda(d.monto)}</td>
+                    <td class="text-sm text-muted">${d.descripcion}</td>
+                </tr>
+            `;
+        });
+    } catch (err) {
+        console.error(err);
+        toast('No se pudo cargar el historial de auditoría', 'err');
+    }
+}
+
+cargarBitacora();
+</script>
+</body>
+</html>

@@ -9,17 +9,58 @@ function requireAuth(rolRequerido) {
   return u;
 }
 
-function logout() { localStorage.removeItem('usuarioActual'); location.href = 'login.html'; }
+async function logout() {
+  const u = getUsuario();
+  
+  if (u) {
+    try {
+      // 1. Preguntamos al backend si este usuario tiene un turno activo
+      const r = await fetch(`${API}/caja/estado/${u.idusuario}`);
+      const caja = await r.json();
+
+      if (caja && caja.activa === true) {
+        const proceder = confirm(
+          "⚠️ Tienes un turno de gaveta activo.\n\n" +
+          "Para salir de manera limpia debes cerrar la caja en su respectiva pestaña.\n" +
+          "Si decides salir ahora, el sistema registrará un CIERRE DE EMERGENCIA AUTOMÁTICO por 'Causas Desconocidas' en el libro de auditoría.\n\n" +
+          "¿Deseas forzar el cierre de sesión?"
+        );
+        
+        if (!proceder) return; // Cancela el logout y se queda en la app
+
+        // 2. Si el usuario decide forzar la salida, notificamos el cierre de emergencia al backend
+        await fetch(`${API}/caja/cerrar`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            idcaja_sesion: caja.datos.idcaja_sesion,
+            montoCierreReal: 0.00, // Se asienta en 0 porque no fue un arqueo manual
+            observaciones: "Cierre forzado: El cajero abandonó la aplicación o cerró sesión directamente desde la barra lateral.",
+            tipoCierre: "cierre_desconocido" // Esto activa el chip rojo en el historial
+          })
+        });
+      }
+    } catch (err) {
+      console.error("Error en el protocolo de cierre seguro:", err);
+    }
+  }
+
+  // 3. Limpieza final y redirección estándar
+  localStorage.removeItem('usuarioActual');
+  location.href = 'login.html';
+}
 
 function renderSidebar(paginaActiva, alertCount) {
   const u = getUsuario(); if (!u) return;
   const links = [
     { href:'dashboard.html',          icon:'ti-layout-dashboard', label:'Dashboard',        key:'dashboard' },
+    { href:'caja.html', icon:'ti-cash-register', label:'Control de Caja', key:'caja' },
     { href:'venta.html',              icon:'ti-shopping-cart',    label:'Ventas',            key:'venta' },
     { href:'ingreso.html',            icon:'ti-package',          label:'Ingresar',          key:'ingreso' },
     { href:'inventario.html',         icon:'ti-clipboard-list',   label:'Inventario',        key:'inventario' },
     { href:'detalleventas.html',      icon:'ti-receipt',          label:'Historial ventas',  key:'detalleventas' },
     { href:'detallecompras.html',     icon:'ti-truck',            label:'Historial compras', key:'detallecompras' },
+    { href:'historial-caja.html',     icon:'ti-report-money',     label:'Auditoría Gaveta',  key:'historial-caja' },
     { href:'ingresoproveedores.html', icon:'ti-building-store',   label:'Proveedores',       key:'proveedores' },
   ];
   const adminLinks = [

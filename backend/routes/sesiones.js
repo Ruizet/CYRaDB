@@ -121,37 +121,66 @@ router.delete('/:id/items/:mid', async (req, res) => {
 router.post('/:id/confirmar', async (req, res) => {
   const { mediopago = 'efectivo' } = req.body;
 
-  // Verificar que la sesión tiene ítems
-  const check = await pool.query(
-    'SELECT COUNT(*) FROM sesion_item WHERE idsesion = $1',
-    [req.params.id]
-  );
-  if (parseInt(check.rows[0].count) === 0)
-    return res.status(400).json({ error: 'El carrito está vacío' });
-
   try {
+    // 1. Verificar que la sesión tiene ítems
+    const check = await pool.query(
+      'SELECT COUNT(*) FROM sesion_item WHERE idsesion = $1',
+      [req.params.id]
+    );
+    if (parseInt(check.rows[0].count) === 0)
+      return res.status(400).json({ error: 'El carrito está vacío' });
+
+    // 🌟 OPERACIÓN ADICIONAL: Conseguir el idusuario dueño de esta pestaña antes de destruirla o cerrarla
+    const sesionInfo = await pool.query(
+      'SELECT idusuario FROM sesion_venta WHERE idsesion = $1',
+      [req.params.id]
+    );
+    const idUsuarioCajero = sesionInfo.rows[0]?.idusuario;
+
+    // 2. Ejecutar tu Stored Procedure original de Postgres
     const result = await pool.query(
       'CALL sp_confirmar_venta($1, $2, NULL, NULL)',
       [req.params.id, mediopago]
     );
+    
     // pg devuelve los OUT params en result.rows[0]
     const { p_idventa, p_total } = result.rows[0];
-    res.json({ idventa: p_idventa, total: p_total });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
-  }
-});
 
-// DELETE /sesiones/:id  — cancelar sesión
-router.delete('/:id', async (req, res) => {
-  try {
-    await pool.query(
-      `UPDATE sesion_venta SET estado = 'cancelada', cerrado_en = NOW()
-       WHERE idsesion = $1 AND estado = 'abierta'`,
-      [req.params.id]
-    );
-    res.json({ ok: true });
+    // ======================================================================
+    // 🌟 INTEGRACIÓN DE LA GAVETA (MAESTRO-DETALLE)
+    // ======================================================================
+    if (idUsuarioCajero) {
+      // Buscamos si el cajero que está cobrando tiene un turno de gaveta abierto
+      const turnoActivo = await pool.query(
+        "SELECT idcaja_sesion FROM caja_sesion WHERE idusuario = $1 AND estado = 'abierta'",
+        [idUsuarioCajero]
+      );
+
+      // Si tiene turno abierto, insertamos de inmediato la venta en el libro de detalles
+      if (turnoActivo.rows.length > 0) {
+        const idcaja_sesion = turnoActivo.rows[0].idcaja_sesion;
+        
+        await pool.query(
+          `INSERT INTO detalle_caja (idcaja_sesion, tipo_movimiento, monto, descripcion) 
+           VALUES ($1, 'venta', $2, $3)`,
+          [
+            idcaja_sesion, 
+            parseFloat(p_total), 
+            `Cobro POS - Venta #${p_idventa} (${mediopago.toUpperCase()})`
+          ]
+        );
+        console.log(`[Bitácora] Venta #${p_idventa} por C$ ${p_total} sumada a la gaveta.`);
+      } else {
+        console.log(`[Advertencia] Venta #${p_idventa} cobrada sin un turno de gaveta activo para el usuario ${idUsuarioCajero}.`);
+      }
+    }
+    // ======================================================================
+
+    // 3. Responder al frontend exactamente como antes
+    res.json({ idventa: p_idventa, total: p_total });
+
   } catch (err) {
+    console.error("Error en confirmación de venta/gaveta:", err);
     res.status(500).json({ error: err.message });
   }
 });

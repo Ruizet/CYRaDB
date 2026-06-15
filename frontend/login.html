@@ -38,6 +38,70 @@ body{display:flex;align-items:center;justify-content:center;min-height:100vh;bac
       <i class="ti ti-login" aria-hidden="true"></i> Ingresar
     </button>
   </div>
+  <div style="text-align:right;margin:-.5rem 0 1rem">
+  <a href="#" id="olvide-password"
+     style="font-size:.85rem;color:var(--brand);text-decoration:none">
+     ¿Olvidaste tu contraseña?
+  </a>
+  </div>
+</div>
+<div class="modal-backdrop" id="modalRecuperar">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Recuperar contraseña</div>
+      <button class="btn-icon" onclick="closeModal('modalRecuperar')">
+        <i class="ti ti-x"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Correo electrónico</label>
+        <input type="email"
+               id="correoRecuperacion"
+               class="form-control"
+               placeholder="correo@ejemplo.com">
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost"
+              onclick="closeModal('modalRecuperar')">
+        Cancelar
+      </button>
+
+      <button class="btn btn-primary"
+              onclick="enviarCodigo()">
+        Enviar código
+      </button>
+    </div>
+  </div>
+</div>
+<div class="modal-backdrop" id="modalCambiarPassword">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Restablecer Contraseña</div>
+      <button class="btn-icon" onclick="closeModal('modalCambiarPassword')">
+        <i class="ti ti-x"></i>
+      </button>
+    </div>
+
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Código de 6 dígitos</label>
+        <input type="text" id="codigoIngresado" class="form-control" placeholder="123456" maxlength="6" style="text-align:center; font-size: 1.2rem; letter-spacing: 4px;">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Nueva Contraseña</label>
+        <input type="password" class="form-control" id="nuevaContrasena" placeholder="Mínimo 6 caracteres">
+      </div>
+    </div>
+
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modalCambiarPassword')">Cancelar</button>
+      <button class="btn btn-primary" onclick="cambiarPassword()">Actualizar Contraseña</button>
+    </div>
+  </div>
 </div>
 <script src="app.js"></script>
 <script>
@@ -63,6 +127,81 @@ function showMsg(t,tipo) {
   m.style.background=tipo==='err'?'var(--danger-bg)':'var(--success-bg)';
   m.style.color=tipo==='err'?'var(--danger)':'var(--success)';
 }
+document.getElementById('olvide-password')
+  .addEventListener('click', e => {
+    e.preventDefault();
+    openModal('modalRecuperar');
+  });document.getElementById('olvide-password')
+  .addEventListener('click', e => {
+    e.preventDefault();
+    openModal('modalRecuperar');
+  });
+
+let correoEnRecuperacion = "";
+
+async function enviarCodigo() {
+  const correo = document.getElementById('correoRecuperacion').value.trim();
+  const btn = document.querySelector('#modalRecuperar .btn-primary');
+  
+  if (!correo) { alert('Por favor, ingresa tu correo electrónico.'); return; }
+
+  btn.disabled = true; btn.textContent = 'Enviando...';
+
+  try {
+    const r = await fetch(`${API}/usuarios/recuperar-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ correo })
+    });
+    
+    const d = await r.json();
+
+    if (r.ok) {
+      correoEnRecuperacion = correo;
+      closeModal('modalRecuperar');
+      openModal('modalCambiarPassword');
+      document.getElementById('correoRecuperacion').value = '';
+    } else {
+      alert(d.error || 'No se pudo enviar el código.');
+    }
+  } catch { alert('Error de conexión con el servidor.'); }
+
+  btn.disabled = false; btn.textContent = 'Enviar código';
+}
+
+async function cambiarPassword() {
+  const codigo = document.getElementById('codigoIngresado').value.trim();
+  const nuevaClave = document.getElementById('nuevaContrasena').value;
+  const btn = document.querySelector('#modalCambiarPassword .btn-primary');
+
+  if (!codigo || !nuevaClave) { alert('Completa ambos campos.'); return; }
+  if (nuevaClave.length < 4) { alert('La contraseña es muy corta.'); return; } // Ajusta según tu gusto
+
+  btn.disabled = true; btn.textContent = 'Procesando...';
+
+  try {
+    const r = await fetch(`${API}/usuarios/restablecer-password`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ correo: correoEnRecuperacion, codigo, nuevaClave })
+    });
+
+    const d = await r.json();
+
+    if (r.ok) {
+      alert('¡Contraseña actualizada con éxito! Ya puedes iniciar sesión.');
+      closeModal('modalCambiarPassword');
+      // Limpiar campos
+      document.getElementById('codigoIngresado').value = '';
+      document.getElementById('nuevaContrasena').value = '';
+    } else {
+      alert(d.error || 'Código incorrecto o vencido.');
+    }
+  } catch { alert('Error de conexión al servidor.'); }
+
+  btn.disabled = false; btn.textContent = 'Actualizar Contraseña';
+}
+  
 </script>
 <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 </body>
