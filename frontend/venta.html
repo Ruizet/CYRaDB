@@ -27,7 +27,9 @@
 .qty-btn{width:26px;height:26px;border:1px solid var(--border);border-radius:6px;background:var(--surface);cursor:pointer;font-size:.9rem;font-weight:600;color:var(--text-2);display:flex;align-items:center;justify-content:center;transition:var(--transition)}
 .qty-btn:hover{background:var(--brand);color:#fff;border-color:var(--brand)}
 .qty-num{width:32px;text-align:center;font-size:.875rem;font-weight:500}
-.cart-item-price{font-size:.875rem;font-weight:600;color:var(--brand);flex-shrink:0;min-width:70px;text-align:right}
+.cart-item-price{display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;min-width:80px;gap:1px}
+.cart-item-unit{font-size:.72rem;color:var(--text-3)}
+.cart-item-total{font-size:.9rem;font-weight:600;color:var(--brand)}
 .pos-right{display:flex;flex-direction:column;gap:0;border-radius:var(--radius-lg);border:1px solid var(--border);background:var(--surface);overflow:hidden}
 .resumen-header{padding:.85rem 1.1rem;border-bottom:1px solid var(--border-soft);font-weight:600;font-size:.9rem}
 .resumen-body{flex:1;padding:.85rem 1.1rem;display:flex;flex-direction:column;gap:.6rem}
@@ -40,6 +42,22 @@
 .carrito-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;color:var(--text-3);gap:.5rem;padding:2rem}
 .carrito-empty i{font-size:2.5rem;opacity:.25}
 .carrito-empty p{font-size:.85rem}
+
+/* Modal confirmación */
+.conf-item{display:flex;justify-content:space-between;align-items:flex-start;padding:.55rem 0;border-bottom:1px solid var(--border-soft);gap:.5rem}
+.conf-item:last-of-type{border-bottom:none}
+.conf-item-name{font-size:.875rem;font-weight:500;flex:1}
+.conf-item-det{font-size:.78rem;color:var(--text-3);margin-top:1px}
+.conf-item-right{text-align:right;flex-shrink:0}
+.conf-item-sub{font-size:.9rem;font-weight:600;color:var(--brand)}
+.conf-item-unit{font-size:.72rem;color:var(--text-3)}
+.conf-total-row{display:flex;justify-content:space-between;align-items:center;padding:.75rem 0 0;margin-top:.25rem;border-top:2px solid var(--border)}
+.conf-total-label{font-size:1rem;font-weight:600}
+.conf-total-val{font-size:1.25rem;font-weight:600;color:var(--brand)}
+.conf-pago-row{display:flex;gap:.4rem;margin-top:.6rem}
+.conf-pago-btn{flex:1;padding:.45rem;border:1.5px solid var(--border);border-radius:8px;background:transparent;font-size:.82rem;font-weight:500;cursor:pointer;text-align:center;transition:var(--transition);color:var(--text-2)}
+.conf-pago-btn.active{border-color:var(--brand);background:var(--brand-light);color:var(--brand)}
+.conf-cliente{margin-top:.75rem}
 
 /* Ticket print */
 #ticket-print{display:none}
@@ -108,11 +126,46 @@
               <button class="pago-tab" data-pago="transferencia" onclick="selPago(this)">Transfer.</button>
             </div>
           </div>
-          <button class="btn btn-primary btn-full btn-lg" id="btn-cobrar" onclick="confirmarVenta()" disabled>
+          <button class="btn btn-primary btn-full btn-lg" id="btn-cobrar" onclick="abrirConfirmacion()" disabled>
             <i class="ti ti-check" aria-hidden="true"></i> Cobrar
           </button>
         </div>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal confirmación de venta -->
+<div class="modal-backdrop" id="modal-confirmacion">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <span class="modal-title"><i class="ti ti-receipt-2" aria-hidden="true"></i> Confirmar venta</span>
+      <button class="btn-icon" onclick="closeModal('modal-confirmacion')"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div id="conf-items"></div>
+      <div class="conf-total-row">
+        <span class="conf-total-label">Total a cobrar</span>
+        <span class="conf-total-val" id="conf-total">C$ 0.00</span>
+      </div>
+      <div class="conf-cliente">
+        <label class="form-label">Nombre del cliente (opcional)</label>
+        <input type="text" class="form-control" id="conf-nombre" placeholder="Cliente">
+      </div>
+      <div style="margin-top:.75rem">
+        <label class="form-label">Medio de pago</label>
+        <div class="conf-pago-row">
+          <button class="conf-pago-btn active" data-pago="efectivo"       onclick="selConfPago(this)">Efectivo</button>
+          <button class="conf-pago-btn"        data-pago="tarjeta"        onclick="selConfPago(this)">Tarjeta</button>
+          <button class="conf-pago-btn"        data-pago="transferencia"  onclick="selConfPago(this)">Transferencia</button>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-confirmacion')">Cancelar</button>
+      <button class="btn btn-primary btn-lg" id="btn-ejecutar" onclick="ejecutarVenta()">
+        <i class="ti ti-check" aria-hidden="true"></i> Confirmar y cobrar
+      </button>
     </div>
   </div>
 </div>
@@ -272,7 +325,10 @@ function renderCarrito(items) {
         <span class="qty-num">${it.cantidad}</span>
         <button class="qty-btn" onclick="cambiarCantidad(${it.idmedicamento},${it.cantidad+1})">+</button>
       </div>
-      <div class="cart-item-price">${moneda(it.subtotal)}</div>
+      <div class="cart-item-price">
+        <span class="cart-item-unit">C$ ${parseFloat(it.precio_snap).toFixed(2)} c/u</span>
+        <span class="cart-item-total">${moneda(it.subtotal)}</span>
+      </div>
       <button class="btn-icon btn-sm" onclick="quitarItem(${it.idmedicamento})" title="Quitar">
         <i class="ti ti-trash" style="font-size:.85rem;color:var(--brand)"></i>
       </button>
@@ -310,27 +366,91 @@ async function quitarItem(idmed) {
   cargarCarrito();
 }
 
-/* ── Confirmar venta ── */
-async function confirmarVenta() {
+/* ── Confirmación en dos pasos ── */
+function abrirConfirmacion() {
   if (!sesionActual) return;
-  const btn = document.getElementById('btn-cobrar');
+  const items  = sesiones[sesionActual]?.items || [];
+  const nombre = sesiones[sesionActual]?.nombre || '';
+  const total  = items.reduce((s,i) => s + parseFloat(i.subtotal), 0);
+
+  // Rellenar modal
+  document.getElementById('conf-nombre').value = nombre === 'Cliente' ? '' : nombre;
+  document.getElementById('conf-total').textContent = moneda(total);
+
+  document.getElementById('conf-items').innerHTML = items.map(it => `
+    <div class="conf-item">
+      <div>
+        <div class="conf-item-name">${it.nombremedicamento}</div>
+        <div class="conf-item-det">${it.presentacion}${it.ubicacion_estante ? ' · <b>' + it.ubicacion_estante + '</b>' : ''}</div>
+      </div>
+      <div class="conf-item-right">
+        <div class="conf-item-sub">${moneda(it.subtotal)}</div>
+        <div class="conf-item-unit">${it.cantidad} × C$ ${parseFloat(it.precio_snap).toFixed(2)}</div>
+      </div>
+    </div>`).join('');
+
+  // Sincronizar selector de pago con el del POS
+  document.querySelectorAll('.conf-pago-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.pago === medioPago);
+  });
+
+  openModal('modal-confirmacion');
+}
+
+function selConfPago(btn) {
+  document.querySelectorAll('.conf-pago-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  medioPago = btn.dataset.pago;
+  // Sincronizar también los botones del POS
+  document.querySelectorAll('.pago-tab').forEach(b => b.classList.toggle('active', b.dataset.pago === medioPago));
+}
+
+async function ejecutarVenta() {
+  if (!sesionActual) return;
+  // Tomar nombre actualizado del modal
+  const nombreModal = document.getElementById('conf-nombre').value.trim();
+  if (nombreModal) {
+    sesiones[sesionActual].nombre = nombreModal;
+    await fetch(`${API}/sesiones/${sesionActual}/nombre`, {
+      method:'PATCH', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ nombre_cliente: nombreModal })
+    });
+  }
+
+  const btn = document.getElementById('btn-ejecutar');
   btn.disabled = true;
+  btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Procesando…';
+
   try {
     const r = await fetch(`${API}/sesiones/${sesionActual}/confirmar`, {
       method:'POST', headers:{'Content-Type':'application/json'},
       body: JSON.stringify({ mediopago: medioPago })
     });
-    if (!r.ok) { const e=await r.json(); toast(e.error,'err'); btn.disabled=false; return; }
+    if (!r.ok) {
+      const e = await r.json();
+      toast(e.error, 'err');
+      btn.disabled = false;
+      btn.innerHTML = '<i class="ti ti-check"></i> Confirmar y cobrar';
+      return;
+    }
     const d = await r.json();
-    const items = sesiones[sesionActual]?.items || [];
+    const items  = sesiones[sesionActual]?.items || [];
     const nombre = sesiones[sesionActual]?.nombre || 'Cliente';
+
+    closeModal('modal-confirmacion');
     mostrarTicket(d.idventa, d.total, items, nombre);
+
     delete sesiones[sesionActual];
     sesionActual = null;
     renderTabs();
     document.getElementById('pos-empty').style.display = 'block';
     document.getElementById('pos-layout').style.display = 'none';
-  } catch { toast('Error procesando venta','err'); btn.disabled=false; }
+  } catch {
+    toast('Error procesando venta', 'err');
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<i class="ti ti-check"></i> Confirmar y cobrar';
 }
 
 /* ── Ticket ── */
@@ -372,5 +492,6 @@ async function mostrarTicket(idventa, total, items, cliente) {
   openModal('modal-ticket');
 }
 </script>
+<style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 </body>
 </html>
