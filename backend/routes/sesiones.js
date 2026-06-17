@@ -78,16 +78,23 @@ router.post('/:id/items', async (req, res) => {
     return res.status(400).json({ error: 'idmedicamento y cantidad requeridos' });
 
   try {
-    // Verificar stock disponible
+// Verificar stock disponible descontando lo reservado, 
+    // pero sumando a favor lo que ESTA misma sesión ya tenía en su carrito.
     const inv = await pool.query(
-      'SELECT cantidadlote, precioventa FROM inventario WHERE idmedicamento = $1',
-      [idmedicamento]
+      `SELECT 
+         i.cantidadlote - i.stock_reservado + COALESCE(si.cantidad, 0) AS disponible, 
+         i.precioventa 
+       FROM inventario i
+       LEFT JOIN sesion_item si ON i.idmedicamento = si.idmedicamento AND si.idsesion = $2
+       WHERE i.idmedicamento = $1`,
+      [idmedicamento, req.params.id]
     );
+    
     if (!inv.rows.length) return res.status(404).json({ error: 'Medicamento no encontrado' });
 
-    const { cantidadlote, precioventa } = inv.rows[0];
-    if (cantidadlote < cantidad)
-      return res.status(400).json({ error: `Stock insuficiente (disponible: ${cantidadlote})` });
+    const { disponible, precioventa } = inv.rows[0];
+    if (disponible < cantidad)
+      return res.status(400).json({ error: `Stock insuficiente (disponible: ${disponible})` });
 
     // Upsert: si ya está en el carrito, actualiza cantidad
     const result = await pool.query(

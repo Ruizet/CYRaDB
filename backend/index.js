@@ -17,6 +17,7 @@ app.use('/compras',     require('./routes/compras'));
 app.use('/proveedores', require('./routes/proveedores'));
 app.use('/dashboard',   require('./routes/dashboard'));
 app.use('/config',      require('./routes/config'));
+app.use('/arqueo',      require('./routes/arqueo'));
 app.use('/auth',        require('./routes/auth'));
 
 app.get('/', (req, res) =>
