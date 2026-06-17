@@ -26,7 +26,9 @@
 .qty-ctrl{display:flex;align-items:center;gap:.25rem;flex-shrink:0}
 .qty-btn{width:26px;height:26px;border:1px solid var(--border);border-radius:6px;background:var(--surface);cursor:pointer;font-size:.9rem;font-weight:600;color:var(--text-2);display:flex;align-items:center;justify-content:center;transition:var(--transition)}
 .qty-btn:hover{background:var(--brand);color:#fff;border-color:var(--brand)}
-.qty-num{width:32px;text-align:center;font-size:.875rem;font-weight:500}
+.qty-input { width: 40px; text-align: center; font-size: .875rem; font-weight: 500; border: 1px solid var(--border); border-radius: 4px; padding: 2px; background: var(--surface); color: var(--text-1); }
+.qty-input::-webkit-outer-spin-button, .qty-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.qty-input[type=number] { -moz-appearance: textfield; }
 .cart-item-price{display:flex;flex-direction:column;align-items:flex-end;flex-shrink:0;min-width:80px;gap:1px}
 .cart-item-unit{font-size:.72rem;color:var(--text-3)}
 .cart-item-total{font-size:.9rem;font-weight:600;color:var(--brand)}
@@ -72,11 +74,12 @@
 <body>
 <aside class="sidebar" id="sidebar"></aside>
 <div class="main">
-  <div class="topbar">
+<div class="topbar">
     <div>
       <div class="topbar-title">Punto de venta</div>
       <div class="topbar-sub">Múltiples clientes simultáneos</div>
     </div>
+    <div id="arqueo-actions"></div>
   </div>
 
   <!-- Barra de pestañas -->
@@ -119,12 +122,26 @@
             <input type="text" class="form-control" id="nombre-cliente" placeholder="Cliente" style="margin-bottom:.6rem">
           </div>
           <div>
-            <div class="form-label">Medio de pago</div>
-            <div class="pago-tabs">
-              <button class="pago-tab active" data-pago="efectivo" onclick="selPago(this)">Efectivo</button>
-              <button class="pago-tab" data-pago="tarjeta" onclick="selPago(this)">Tarjeta</button>
-              <button class="pago-tab" data-pago="transferencia" onclick="selPago(this)">Transfer.</button>
+         <div style="margin-top:.75rem">
+            <label class="form-label">Medio de pago</label>
+            <div class="conf-pago-row">
+              <button class="conf-pago-btn active" data-pago="efectivo"       onclick="selConfPago(this)">Efectivo</button>
+              <button class="conf-pago-btn"        data-pago="tarjeta"        onclick="selConfPago(this)">Tarjeta</button>
+              <button class="conf-pago-btn"        data-pago="transferencia"  onclick="selConfPago(this)">Transferencia</button>
             </div>
+          </div>
+          <div id="wrapper-efectivo" style="margin-top:.75rem">
+            <div class="form-row">
+              <div class="form-group">
+                <label class="form-label">Monto recibido (C$)</label>
+                <input type="number" class="form-control" id="conf-recibido" placeholder="0.00" oninput="calcularCambio()">
+              </div>
+              <div class="form-group">
+                <label class="form-label">Cambio (Vuelto)</label>
+                <div id="conf-cambio" style="font-size:1.15rem; font-weight:600; color:var(--success); padding-top:.4rem">C$ 0.00</div>
+              </div>
+            </div>
+          </div>
           </div>
           <button class="btn btn-primary btn-full btn-lg" id="btn-cobrar" onclick="abrirConfirmacion()" disabled>
             <i class="ti ti-check" aria-hidden="true"></i> Cobrar
@@ -188,6 +205,83 @@
     </div>
   </div>
 </div>
+
+
+<div class="modal-backdrop" id="modal-apertura" style="background:rgba(0,0,0,0.8);">
+  <div class="modal">
+    <div class="modal-header" style="background:var(--brand); color:white;">
+      <span class="modal-title"><i class="ti ti-lock-open" aria-hidden="true"></i> Apertura de Caja (Fondo Inicial)</span>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:.82rem; color:var(--text-2); margin-bottom:1rem">
+        Para iniciar el turno de ventas, declara el dinero base en efectivo disponible en gaveta.
+      </p>
+      <div class="form-group">
+        <label class="form-label">Monto de Apertura (C$)</label>
+        <input type="number" class="form-control" id="apertura-monto" value="0.00" min="0" step="0.01">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary btn-full" onclick="guardarApertura()">
+        <i class="ti ti-check" aria-hidden="true"></i> Abrir Caja e Iniciar Turno
+      </button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="modal-cierre">
+  <div class="modal modal-lg">
+    <div class="modal-header" style="background:var(--sidebar-bg); color:white;">
+      <span class="modal-title"><i class="ti ti-lock" aria-hidden="true"></i> Arqueo y Cierre de Caja</span>
+      <button class="btn-icon" onclick="closeModal('modal-cierre')" style="color:white; border-color:rgba(255,255,255,0.2)"><i class="ti ti-x"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="grid-2 mb-md">
+        <div style="background:var(--surface-2); padding:.75rem; border-radius:var(--radius); border:1px solid var(--border);">
+          <div class="text-muted text-sm">Fondo Inicial</div>
+          <div class="font-semi" id="cierre-val-inicial" style="font-size:1.1rem">C$ 0.00</div>
+        </div>
+        <div style="background:var(--surface-2); padding:.75rem; border-radius:var(--radius); border:1px solid var(--border);">
+          <div class="text-muted text-sm">Ventas Efectivo</div>
+          <div class="font-semi" id="cierre-val-efectivo" style="font-size:1.1rem">C$ 0.00</div>
+        </div>
+      </div>
+      <div class="grid-2 mb-md">
+        <div style="background:var(--surface-2); padding:.75rem; border-radius:var(--radius); border:1px solid var(--border);">
+          <div class="text-muted text-sm">Ventas Tarjeta</div>
+          <div class="font-semi" id="cierre-val-tarjeta" style="font-size:1.1rem">C$ 0.00</div>
+        </div>
+        <div style="background:var(--surface-2); padding:.75rem; border-radius:var(--radius); border:1px solid var(--border);">
+          <div class="text-muted text-sm">Ventas Transferencia</div>
+          <div class="font-semi" id="cierre-val-transferencia" style="font-size:1.1rem">C$ 0.00</div>
+        </div>
+      </div>
+      <hr style="border:none; border-top:1px solid var(--border); margin:1rem 0">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label font-semi">Efectivo Esperado en Gaveta</label>
+          <div id="cierre-val-calculado" style="font-size:1.3rem; font-weight:600; color:var(--info); padding-top:.2rem">C$ 0.00</div>
+          <span class="text-muted text-sm">(Fondo Inicial + Ventas Efectivo)</span>
+        </div>
+        <div class="form-group">
+          <label class="form-label font-semi" style="color:var(--brand)">Efectivo REAL Físico en Caja *</label>
+          <input type="number" class="form-control" id="cierre-monto-real" placeholder="Cuenta el dinero de la gaveta" oninput="calcularDescuadre()">
+        </div>
+      </div>
+      <div id="wrapper-descuadre" style="padding:1rem; border-radius:var(--radius); text-align:center; font-weight:600; font-size:1.1rem; display:none; margin-top:.5rem">
+        <span id="descuadre-texto"></span>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-cierre')">Cancelar</button>
+      <button class="btn btn-primary" id="btn-confirmar-cierre" onclick="ejecutarCierreCaja()">
+        <i class="ti ti-lock-check" aria-hidden="true"></i> Guardar Arqueo y Cerrar Turno
+      </button>
+    </div>
+  </div>
+</div>
+
+
 
 <div id="toast-area"></div>
 <script src="app.js"></script>
@@ -322,7 +416,7 @@ function renderCarrito(items) {
       </div>
       <div class="qty-ctrl">
         <button class="qty-btn" onclick="cambiarCantidad(${it.idmedicamento},${it.cantidad-1})">−</button>
-        <span class="qty-num">${it.cantidad}</span>
+        <input type="number" class="qty-input" value="${it.cantidad}" onchange="cambiarCantidad(${it.idmedicamento}, this.value)">
         <button class="qty-btn" onclick="cambiarCantidad(${it.idmedicamento},${it.cantidad+1})">+</button>
       </div>
       <div class="cart-item-price">
@@ -353,11 +447,20 @@ function renderResumen(items) {
 }
 
 async function cambiarCantidad(idmed, nuevaCant) {
-  if (nuevaCant < 1) { quitarItem(idmed); return; }
-  await fetch(`${API}/sesiones/${sesionActual}/items`, {
-    method:'POST', headers:{'Content-Type':'application/json'},
-    body: JSON.stringify({ idmedicamento: idmed, cantidad: nuevaCant })
-  });
+  let cant = parseInt(nuevaCant);
+  if (isNaN(cant) || cant < 1) { quitarItem(idmed); return; }
+  try {
+    const r = await fetch(`${API}/sesiones/${sesionActual}/items`, {
+      method:'POST', headers:{'Content-Type':'application/json'},
+      body: JSON.stringify({ idmedicamento: idmed, cantidad: cant })
+    });
+    if (!r.ok) {
+      const e = await r.json();
+      toast(e.error, 'err');
+    }
+  } catch (err) {
+    toast('Error de conexión al servidor', 'err');
+  }
   cargarCarrito();
 }
 
@@ -367,15 +470,34 @@ async function quitarItem(idmed) {
 }
 
 /* ── Confirmación en dos pasos ── */
+let totalVentaActual = 0;
+
+function calcularCambio() {
+  const recibido = parseFloat(document.getElementById('conf-recibido').value) || 0;
+  const cambioEl = document.getElementById('conf-cambio');
+  if (recibido >= totalVentaActual) {
+    cambioEl.textContent = moneda(recibido - totalVentaActual);
+    cambioEl.style.color = 'var(--success)';
+    document.getElementById('btn-ejecutar').disabled = false;
+  } else {
+    cambioEl.textContent = 'Monto insuficiente';
+    cambioEl.style.color = 'var(--brand)';
+    if (medioPago === 'efectivo') {
+      document.getElementById('btn-ejecutar').disabled = true;
+    } else {
+      document.getElementById('btn-ejecutar').disabled = false;
+    }
+  }
+}
+
 function abrirConfirmacion() {
   if (!sesionActual) return;
   const items  = sesiones[sesionActual]?.items || [];
   const nombre = sesiones[sesionActual]?.nombre || '';
-  const total  = items.reduce((s,i) => s + parseFloat(i.subtotal), 0);
+  totalVentaActual = items.reduce((s,i) => s + parseFloat(i.subtotal), 0);
 
-  // Rellenar modal
   document.getElementById('conf-nombre').value = nombre === 'Cliente' ? '' : nombre;
-  document.getElementById('conf-total').textContent = moneda(total);
+  document.getElementById('conf-total').textContent = moneda(totalVentaActual);
 
   document.getElementById('conf-items').innerHTML = items.map(it => `
     <div class="conf-item">
@@ -389,10 +511,13 @@ function abrirConfirmacion() {
       </div>
     </div>`).join('');
 
-  // Sincronizar selector de pago con el del POS
   document.querySelectorAll('.conf-pago-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.pago === medioPago);
   });
+
+  document.getElementById('conf-recibido').value = '';
+  document.getElementById('wrapper-efectivo').style.display = medioPago === 'efectivo' ? 'block' : 'none';
+  calcularCambio();
 
   openModal('modal-confirmacion');
 }
@@ -401,13 +526,14 @@ function selConfPago(btn) {
   document.querySelectorAll('.conf-pago-btn').forEach(b => b.classList.remove('active'));
   btn.classList.add('active');
   medioPago = btn.dataset.pago;
-  // Sincronizar también los botones del POS
   document.querySelectorAll('.pago-tab').forEach(b => b.classList.toggle('active', b.dataset.pago === medioPago));
+  
+  document.getElementById('wrapper-efectivo').style.display = medioPago === 'efectivo' ? 'block' : 'none';
+  calcularCambio();
 }
 
 async function ejecutarVenta() {
   if (!sesionActual) return;
-  // Tomar nombre actualizado del modal
   const nombreModal = document.getElementById('conf-nombre').value.trim();
   if (nombreModal) {
     sesiones[sesionActual].nombre = nombreModal;
@@ -416,6 +542,9 @@ async function ejecutarVenta() {
       body: JSON.stringify({ nombre_cliente: nombreModal })
     });
   }
+
+  const recibidoVal = parseFloat(document.getElementById('conf-recibido').value) || totalVentaActual;
+  const cambioTxt = document.getElementById('conf-cambio').textContent;
 
   const btn = document.getElementById('btn-ejecutar');
   btn.disabled = true;
@@ -438,7 +567,7 @@ async function ejecutarVenta() {
     const nombre = sesiones[sesionActual]?.nombre || 'Cliente';
 
     closeModal('modal-confirmacion');
-    mostrarTicket(d.idventa, d.total, items, nombre);
+    mostrarTicket(d.idventa, d.total, items, nombre, recibidoVal, cambioTxt);
 
     delete sesiones[sesionActual];
     sesionActual = null;
@@ -454,8 +583,7 @@ async function ejecutarVenta() {
 }
 
 /* ── Ticket ── */
-async function mostrarTicket(idventa, total, items, cliente) {
-  // Cargar config de farmacia
+async function mostrarTicket(idventa, total, items, cliente, recibido = 0, cambio = 'C$ 0.00') {
   let cfg = {};
   try { const r=await fetch(`${API}/config`); cfg=await r.json(); } catch {}
   const nombre_farm = cfg.nombre_farmacia || 'Farmacia C&R';
@@ -469,6 +597,14 @@ async function mostrarTicket(idventa, total, items, cliente) {
       <td style="text-align:center">×${it.cantidad}</td>
       <td style="text-align:right">${moneda(it.subtotal)}</td>
     </tr>`).join('');
+
+  let detallesEfectivo = '';
+  if (medioPago === 'efectivo') {
+    detallesEfectivo = `
+      <div class="t-row"><span>Recibido</span><span>${moneda(recibido)}</span></div>
+      <div class="t-row"><span>Cambio</span><span>${cambio}</span></div>
+    `;
+  }
 
   document.getElementById('ticket-print').innerHTML = `
     <div class="t-center"><div class="t-bold" style="font-size:14px">${nombre_farm}</div>
@@ -486,11 +622,130 @@ async function mostrarTicket(idventa, total, items, cliente) {
     <hr class="t-sep">
     <div class="t-row t-bold"><span>TOTAL</span><span>${moneda(total)}</span></div>
     <div>Pago: ${medioPago}</div>
+    ${detallesEfectivo}
     <hr class="t-sep">
     <div class="t-center" style="font-size:10px;margin-top:4px">¡Gracias por su compra!</div>`;
 
   openModal('modal-ticket');
 }
+
+
+/* ── Lógica de Arqueo y Control de Caja ── */
+let arqueoActivoId = null;
+let efectivoEsperadoCalculado = 0;
+
+async function verificarEstadoCaja() {
+  try {
+    const r = await fetch(`${API}/arqueo/estado/${u.idusuario}`);
+    const d = await r.json();
+    if (d.abierto) {
+      arqueoActivoId = d.arqueo.idarqueo;
+      document.getElementById('modal-apertura').classList.remove('open');
+      document.getElementById('arqueo-actions').innerHTML = `
+        <button class="btn btn-ghost btn-sm" onclick="abrirModalCierre()" style="color:var(--brand); border-color:var(--brand-mid)">
+          <i class="ti ti-lock" aria-hidden="true"></i> Arqueo / Cerrar Caja
+        </button>`;
+    } else {
+      arqueoActivoId = null;
+      document.getElementById('arqueo-actions').innerHTML = '';
+      openModal('modal-apertura');
+    }
+  } catch {
+    toast('Error verificando estado de caja','err');
+  }
+}
+
+async function guardarApertura() {
+  const monto = parseFloat(document.getElementById('apertura-monto').value);
+  if (isNaN(monto) || monto < 0) { toast('Ingresa un monto válido','warn'); return; }
+  try {
+    const r = await fetch(`${API}/arqueo/abrir`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idusuario: u.idusuario, monto_inicial: monto })
+    });
+    if (r.ok) {
+      toast('Turno de caja abierto correctamente','ok');
+      verificarEstadoCaja();
+    }
+  } catch {
+    toast('Error abriendo caja','err');
+  }
+}
+
+async function abrirModalCierre() {
+  if (!arqueoActivoId) return;
+  try {
+    const r = await fetch(`${API}/arqueo/totales/${arqueoActivoId}`);
+    const d = await r.json();
+    
+    document.getElementById('cierre-val-inicial').textContent = moneda(d.inicial);
+    document.getElementById('cierre-val-efectivo').textContent = moneda(d.efectivo);
+    document.getElementById('cierre-val-tarjeta').textContent = moneda(d.tarjeta);
+    document.getElementById('cierre-val-transferencia').textContent = moneda(d.transferencia);
+    document.getElementById('cierre-val-calculado').textContent = moneda(d.calculado);
+    
+    efectivoEsperadoCalculado = d.calculado;
+    document.getElementById('cierre-monto-real').value = '';
+    document.getElementById('wrapper-descuadre').style.display = 'none';
+    
+    openModal('modal-cierre');
+  } catch {
+    toast('Error calculando totales de arqueo','err');
+  }
+}
+
+function calcularDescuadre() {
+  const real = parseFloat(document.getElementById('cierre-monto-real').value) || 0;
+  const divBox = document.getElementById('wrapper-descuadre');
+  const divTxt = document.getElementById('descuadre-texto');
+  const dif = real - efectivoEsperadoCalculado;
+  
+  divBox.style.display = 'block';
+  if (dif === 0) {
+    divBox.style.background = 'var(--success-bg)';
+    divBox.style.color = 'var(--success)';
+    divTxt.innerHTML = '✓ Caja Cuadrada Perfectamente';
+  } else if (dif > 0) {
+    divBox.style.background = 'var(--info-bg)';
+    divBox.style.color = 'var(--info)';
+    divTxt.innerHTML = `Sobrante en Gaveta: C$ ${dif.toFixed(2)}`;
+  } else {
+    divBox.style.background = 'var(--brand-light)';
+    divBox.style.color = 'var(--brand)';
+    divTxt.innerHTML = `Faltante en Gaveta: C$ ${Math.abs(dif).toFixed(2)}`;
+  }
+}
+
+async function ejecutarCierreCaja() {
+  const realInput = document.getElementById('cierre-monto-real').value;
+  if (realInput === '') { toast('Debes declarar el monto físico real para cerrar','warn'); return; }
+  const real = parseFloat(realInput);
+  
+  const btn = document.getElementById('btn-confirmar-cierre');
+  btn.disabled = true;
+  
+  try {
+    const r = await fetch(`${API}/arqueo/cerrar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idarqueo: arqueoActivoId, monto_final_real: real })
+    });
+    if (r.ok) {
+      const res = await r.json();
+      toast(`Caja cerrada. Descuadre registrado: C$ ${parseFloat(res.diferencia).toFixed(2)}`,'ok',5000);
+      closeModal('modal-cierre');
+      verificarEstadoCaja();
+    }
+  } catch {
+    toast('Error guardando el arqueo','err');
+  }
+  btn.disabled = false;
+}
+
+// Iniciar verificación al cargar la página
+verificarEstadoCaja();
+
 </script>
 <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
 </body>
