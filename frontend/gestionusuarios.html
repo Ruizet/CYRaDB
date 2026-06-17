@@ -24,7 +24,7 @@
       <div class="table-wrap">
         <table>
           <thead>
-            <tr><th>#</th><th>Nombre</th><th>Usuario</th><th>Rol</th><th></th></tr>
+            <tr><th>#</th><th>Nombre</th><th>Usuario</th><th>Email</th><th>Rol</th><th></th></tr>
           </thead>
           <tbody id="tbody"></tbody>
         </table>
@@ -51,6 +51,10 @@
           <label class="form-label">Usuario *</label>
           <input type="text" class="form-control" id="f-usuario" placeholder="login">
         </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Correo electrónico <span style="color:var(--text-3);font-weight:400">(para recuperar contraseña)</span></label>
+        <input type="email" class="form-control" id="f-email" placeholder="correo@ejemplo.com" autocomplete="email">
       </div>
       <div class="form-row">
         <div class="form-group">
@@ -106,6 +110,7 @@ function renderTabla(data) {
       <td class="text-muted text-sm">${usr.idusuario}</td>
       <td class="font-medium">${usr.nombre}${esSesion?' <span class="chip chip-info" style="font-size:.68rem">Tú</span>':''}</td>
       <td><code style="font-size:.82rem;background:var(--surface-2);padding:2px 6px;border-radius:5px">${usr.usuario}</code></td>
+      <td>${usr.email ? `<span style="font-size:.82rem">${usr.email}</span>` : '<span class="text-muted text-sm">—</span>'}</td>
       <td>${rolChip}</td>
       <td>
         <div class="flex-center gap-sm">
@@ -125,6 +130,7 @@ function abrirNuevo() {
   document.getElementById('edit-id').value    = '';
   document.getElementById('f-nombre').value   = '';
   document.getElementById('f-usuario').value  = '';
+  document.getElementById('f-email').value    = '';
   document.getElementById('f-pass').value     = '';
   document.getElementById('f-rol').value      = 'empleado';
   document.getElementById('modal-title').textContent = 'Nuevo usuario';
@@ -137,6 +143,7 @@ function abrirEdit(usr) {
   document.getElementById('edit-id').value    = usr.idusuario;
   document.getElementById('f-nombre').value   = usr.nombre;
   document.getElementById('f-usuario').value  = usr.usuario;
+  document.getElementById('f-email').value    = usr.email || '';
   document.getElementById('f-pass').value     = '';
   document.getElementById('f-rol').value      = usr.rol;
   document.getElementById('modal-title').textContent = 'Editar usuario';
@@ -149,11 +156,15 @@ async function guardar() {
   const id      = document.getElementById('edit-id').value;
   const nombre  = document.getElementById('f-nombre').value.trim();
   const usuario = document.getElementById('f-usuario').value.trim();
+  const email   = document.getElementById('f-email').value.trim();
   const password= document.getElementById('f-pass').value;
   const rol     = document.getElementById('f-rol').value;
 
   if (!nombre || !usuario)        { toast('Nombre y usuario son obligatorios','warn'); return; }
   if (!id && !password)           { toast('La contraseña es obligatoria para usuarios nuevos','warn'); return; }
+  if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) {
+    toast('El correo electrónico no es válido','warn'); return;
+  }
 
   try {
     const url    = id ? `${API}/usuarios/${id}` : `${API}/usuarios`;
@@ -161,7 +172,7 @@ async function guardar() {
     const r = await fetch(url, {
       method,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ nombre, usuario, password, rol })
+      body: JSON.stringify({ nombre, usuario, email: email || null, password, rol })
     });
     if (!r.ok) { const e = await r.json(); toast(e.error,'err'); return; }
     toast(id ? 'Usuario actualizado' : 'Usuario creado','ok');

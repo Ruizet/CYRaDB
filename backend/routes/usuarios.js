@@ -6,7 +6,7 @@ const pool    = require('../db');
 router.get('/', async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT idusuario, nombre, usuario, rol FROM usuario ORDER BY idusuario ASC'
+      'SELECT idusuario, nombre, usuario, rol, email FROM usuario ORDER BY idusuario ASC'
     );
     res.json(result.rows);
   } catch (err) {
@@ -18,7 +18,7 @@ router.get('/', async (req, res) => {
 router.get('/:id', async (req, res) => {
   try {
     const result = await pool.query(
-      'SELECT idusuario, nombre, usuario, rol FROM usuario WHERE idusuario = $1',
+      'SELECT idusuario, nombre, usuario, rol, email FROM usuario WHERE idusuario = $1',
       [req.params.id]
     );
     if (!result.rows.length) return res.status(404).json({ error: 'No encontrado' });
@@ -59,16 +59,16 @@ router.post('/login', async (req, res) => {
 
 // POST /usuarios
 router.post('/', async (req, res) => {
-  const { nombre, usuario, password, rol } = req.body;
+  const { nombre, usuario, password, rol, email } = req.body;
   if (!nombre || !usuario || !password || !rol)
     return res.status(400).json({ error: 'Todos los campos son obligatorios' });
 
   try {
     const result = await pool.query(
-      `INSERT INTO usuario (nombre, usuario, contrasena, rol)
-       VALUES ($1, $2, $3, $4)
-       RETURNING idusuario, nombre, usuario, rol`,
-      [nombre, usuario, password, rol]
+      `INSERT INTO usuario (nombre, usuario, contrasena, rol, email)
+       VALUES ($1, $2, $3, $4, $5)
+       RETURNING idusuario, nombre, usuario, rol, email`,
+      [nombre, usuario, password, rol, email || null]
     );
     res.json(result.rows[0]);
   } catch (err) {
@@ -80,17 +80,17 @@ router.post('/', async (req, res) => {
 
 // PUT /usuarios/:id
 router.put('/:id', async (req, res) => {
-  const { nombre, usuario, password, rol } = req.body;
+  const { nombre, usuario, password, rol, email } = req.body;
   try {
     let query, values;
     if (password && password.trim()) {
-      query  = `UPDATE usuario SET nombre=$1, usuario=$2, rol=$3, contrasena=$4
-                WHERE idusuario=$5 RETURNING idusuario, nombre, usuario, rol`;
-      values = [nombre, usuario, rol, password, req.params.id];
+      query  = `UPDATE usuario SET nombre=$1, usuario=$2, rol=$3, contrasena=$4, email=$5
+                WHERE idusuario=$6 RETURNING idusuario, nombre, usuario, rol, email`;
+      values = [nombre, usuario, rol, password, email || null, req.params.id];
     } else {
-      query  = `UPDATE usuario SET nombre=$1, usuario=$2, rol=$3
-                WHERE idusuario=$4 RETURNING idusuario, nombre, usuario, rol`;
-      values = [nombre, usuario, rol, req.params.id];
+      query  = `UPDATE usuario SET nombre=$1, usuario=$2, rol=$3, email=$4
+                WHERE idusuario=$5 RETURNING idusuario, nombre, usuario, rol, email`;
+      values = [nombre, usuario, rol, email || null, req.params.id];
     }
     const result = await pool.query(query, values);
     if (!result.rows.length) return res.status(404).json({ error: 'No encontrado' });
