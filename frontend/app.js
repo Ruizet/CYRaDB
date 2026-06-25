@@ -1,4 +1,4 @@
-const API = 'http://localhost:3000';
+const API = window.location.origin;
 
 function getUsuario() { return JSON.parse(localStorage.getItem('usuarioActual') || 'null'); }
 
