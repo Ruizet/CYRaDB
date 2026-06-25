@@ -124,26 +124,20 @@ router.delete('/:id/items/:mid', async (req, res) => {
   }
 });
 
-// POST /sesiones/:id/confirmar  — cerrar sesión y generar venta (stored procedure)
+// POST /sesiones/:id/confirmar
 router.post('/:id/confirmar', async (req, res) => {
-  const { mediopago = 'efectivo' } = req.body;
+  const { mediopago = 'efectivo', recibido = 0, cambio = 0 } = req.body;
 
-  // Verificar que la sesión tiene ítems
-  const check = await pool.query(
-    'SELECT COUNT(*) FROM sesion_item WHERE idsesion = $1',
-    [req.params.id]
-  );
-  if (parseInt(check.rows[0].count) === 0)
-    return res.status(400).json({ error: 'El carrito está vacío' });
+  const check = await pool.query('SELECT COUNT(*) FROM sesion_item WHERE idsesion = $1', [req.params.id]);
+  if (parseInt(check.rows[0].count) === 0) return res.status(400).json({ error: 'El carrito está vacío' });
 
   try {
     const result = await pool.query(
-      'CALL sp_confirmar_venta($1, $2, NULL, NULL)',
-      [req.params.id, mediopago]
+      'CALL sp_confirmar_venta($1, $2, $3, $4, NULL, NULL)',
+      [req.params.id, mediopago, recibido, cambio]
     );
-    // pg devuelve los OUT params en result.rows[0]
     const { p_idventa, p_total } = result.rows[0];
-    res.json({ idventa: p_idventa, total: p_total });
+    res.json({ idventa: p_idventa, total: p_total, recibido, cambio });
   } catch (err) {
     res.status(500).json({ error: err.message });
   }

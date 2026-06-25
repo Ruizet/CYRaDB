@@ -98,15 +98,63 @@ async function cargarAlertas() {
       return;
     }
     const iconos = { vencimiento:'ti-calendar-x', stock:'ti-package-off' };
-    area.innerHTML = `<div class="alerts-grid">${data.map(a=>`
+    
+    area.innerHTML = `<div class="alerts-grid">${data.map(a => {
+      let botonesHtml = '';
+      if (a.tipo === 'vencimiento') {
+        if (a.nivel === 'critico') {
+          // Botón rojo para retirar stock vencido
+          botonesHtml = `<button class="btn btn-sm" style="margin-top:8px; padding:4px 8px; font-size:0.75rem; background:var(--danger-bg); color:var(--brand); border:1px solid var(--brand);" onclick="darBajaVencido(${a.idmedicamento})"><i class="ti ti-trash"></i> Retirar Stock</button>`;
+        } else {
+          // Botón azul para sugerir promoción (-20%)
+          const precioPromo = (parseFloat(a.precioventa) * 0.8).toFixed(2);
+          botonesHtml = `<button class="btn btn-sm" style="margin-top:8px; padding:4px 8px; font-size:0.75rem; background:#eef2fa; color:#0d6efd; border:1px solid #0d6efd;" onclick="aplicarPromo(${a.idmedicamento}, ${precioPromo})"><i class="ti ti-tag"></i> Aplicar Promo (-20%)</button>`;
+        }
+      }
+
+      return `
       <div class="alert-row nivel-${a.nivel}">
         <i class="ti ${iconos[a.tipo]||'ti-alert-circle'} alert-icon" aria-hidden="true"></i>
-        <div>
+        <div style="flex:1">
           <div class="alert-desc">${a.descripcion}</div>
-          <div class="alert-detalle">${a.tipo==='vencimiento'?'Vence: '+a.detalle:a.detalle}</div>
+          <div class="alert-detalle">${a.detalle}</div>
+          ${botonesHtml}
         </div>
-      </div>`).join('')}</div>`;
+      </div>`;
+    }).join('')}</div>`;
   } catch { toast('Error cargando alertas','err'); }
+}
+
+async function darBajaVencido(idmedicamento) {
+  if (!confirm('¿Estás seguro de retirar todo el stock de este lote vencido? La cantidad pasará a 0.')) return;
+  try {
+    const r = await fetch(`${API}/inventario/${idmedicamento}/baja`, { method: 'POST' });
+    if (r.ok) {
+      toast('Inventario retirado exitosamente', 'ok');
+      cargarAlertas(); // Recarga la lista
+      cargarKPIs();    // Actualiza los números superiores
+    } else {
+      toast('Error al dar de baja', 'err');
+    }
+  } catch { toast('Error de conexión', 'err'); }
+}
+
+async function aplicarPromo(idmedicamento, nuevoPrecio) {
+  if (!confirm(`¿Deseas aplicar una promoción y bajar el precio a C$ ${nuevoPrecio} para acelerar la venta?`)) return;
+  try {
+    // Usamos la ruta PUT existente para actualizar el precio
+    const r = await fetch(`${API}/inventario/${idmedicamento}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ precioventa: nuevoPrecio })
+    });
+    if (r.ok) {
+      toast(`Promoción aplicada (Nuevo precio: C$ ${nuevoPrecio})`, 'ok');
+      cargarAlertas();
+    } else {
+      toast('Error al aplicar promoción', 'err');
+    }
+  } catch { toast('Error de conexión', 'err'); }
 }
 
 renderSidebar('dashboard');

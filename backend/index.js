@@ -15,6 +15,7 @@ app.use('/ventas',      require('./routes/ventas'));
 app.use('/sesiones',    require('./routes/sesiones'));
 app.use('/compras',     require('./routes/compras'));
 app.use('/proveedores', require('./routes/proveedores'));
+app.use('/reportes', require('./routes/reportes'));
 app.use('/dashboard',   require('./routes/dashboard'));
 app.use('/config',      require('./routes/config'));
 app.use('/arqueo',      require('./routes/arqueo'));

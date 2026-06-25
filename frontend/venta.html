@@ -325,14 +325,7 @@ function renderTabs() {
   bar.innerHTML = tabsHtml + `<button class="btn-new-tab" onclick="nuevaSesion()"><i class="ti ti-plus" aria-hidden="true"></i> Nueva caja</button>`;
 }
 
-function activarSesion(id) {
-  sesionActual = parseInt(id);
-  document.getElementById('pos-empty').style.display = 'none';
-  document.getElementById('pos-layout').style.display = 'grid';
-  renderTabs();
-  cargarCarrito();
-  sincNombreCliente();
-}
+
 
 function sincNombreCliente() {
   const s = sesiones[sesionActual];
@@ -429,13 +422,26 @@ function renderCarrito(items) {
     </div>`).join('');
 }
 
+function activarSesion(id) {
+  sesionActual = parseInt(id);
+  document.getElementById('pos-empty').style.display = 'none';
+  document.getElementById('pos-layout').style.display = 'grid';
+  renderTabs();
+  cargarCarrito();
+  sincNombreCliente();
+  
+  // Restaurar el dinero tipeado si el usuario cambia de pestaña
+  document.getElementById('conf-recibido').value = sesiones[sesionActual]?.recibido || '';
+  calcularCambio();
+}
+
 function renderResumen(items) {
   const total = items.reduce((s,i)=>s+parseFloat(i.subtotal),0);
   const body = document.getElementById('resumen-body');
-  const btn  = document.getElementById('btn-cobrar');
   if (!items.length) {
     body.innerHTML = '<div style="color:var(--text-3);font-size:.85rem;text-align:center;margin-top:1rem">Sin productos</div>';
-    btn.disabled = true; return;
+    calcularCambio(); // Validar para bloquear botón si está vacío
+    return;
   }
   body.innerHTML = items.map(it=>`
     <div class="resumen-row">
@@ -443,7 +449,8 @@ function renderResumen(items) {
       <span class="text-sm font-medium">${moneda(it.subtotal)}</span>
     </div>`).join('') +
     `<div class="resumen-row total"><span>Total</span><span>${moneda(total)}</span></div>`;
-  btn.disabled = false;
+  
+  calcularCambio(); // Recalcular vuelto dinámicamente al agregar items
 }
 
 async function cambiarCantidad(idmed, nuevaCant) {
@@ -470,23 +477,50 @@ async function quitarItem(idmed) {
 }
 
 /* ── Confirmación en dos pasos ── */
+/* ── Confirmación en dos pasos ── */
 let totalVentaActual = 0;
+let cambioNumerico = 0;
 
 function calcularCambio() {
-  const recibido = parseFloat(document.getElementById('conf-recibido').value) || 0;
+  if (!sesionActual) return;
+  const items = sesiones[sesionActual].items || [];
+  totalVentaActual = items.reduce((s,i) => s + parseFloat(i.subtotal), 0);
+  
+  const recibidoInput = document.getElementById('conf-recibido');
+  // Guardar el billete ingresado en la memoria de la pestaña actual
+  if (sesiones[sesionActual]) {
+    sesiones[sesionActual].recibido = recibidoInput.value;
+  }
+  
+  const recibido = parseFloat(recibidoInput.value) || 0;
   const cambioEl = document.getElementById('conf-cambio');
-  if (recibido >= totalVentaActual) {
-    cambioEl.textContent = moneda(recibido - totalVentaActual);
-    cambioEl.style.color = 'var(--success)';
-    document.getElementById('btn-ejecutar').disabled = false;
-  } else {
-    cambioEl.textContent = 'Monto insuficiente';
-    cambioEl.style.color = 'var(--brand)';
-    if (medioPago === 'efectivo') {
-      document.getElementById('btn-ejecutar').disabled = true;
+  const btnCobrar = document.getElementById('btn-cobrar');
+
+  // Si el carrito está vacío, no se puede cobrar
+  if (items.length === 0) {
+    cambioEl.textContent = 'C$ 0.00';
+    cambioEl.style.color = 'var(--text-3)';
+    btnCobrar.disabled = true;
+    return;
+  }
+
+  if (medioPago === 'efectivo') {
+    if (recibido >= totalVentaActual) {
+      cambioNumerico = recibido - totalVentaActual;
+      cambioEl.textContent = moneda(cambioNumerico);
+      cambioEl.style.color = '#0d6efd'; 
+      btnCobrar.disabled = false;
     } else {
-      document.getElementById('btn-ejecutar').disabled = false;
+      cambioNumerico = 0;
+      cambioEl.textContent = 'Monto insuficiente';
+      cambioEl.style.color = '#dc3545'; 
+      btnCobrar.disabled = true;
     }
+  } else {
+    cambioNumerico = 0;
+    cambioEl.textContent = 'No aplica';
+    cambioEl.style.color = 'var(--text-3)';
+    btnCobrar.disabled = false;
   }
 }
 
@@ -494,7 +528,6 @@ function abrirConfirmacion() {
   if (!sesionActual) return;
   const items  = sesiones[sesionActual]?.items || [];
   const nombre = sesiones[sesionActual]?.nombre || '';
-  totalVentaActual = items.reduce((s,i) => s + parseFloat(i.subtotal), 0);
 
   document.getElementById('conf-nombre').value = nombre === 'Cliente' ? '' : nombre;
   document.getElementById('conf-total').textContent = moneda(totalVentaActual);
@@ -514,10 +547,6 @@ function abrirConfirmacion() {
   document.querySelectorAll('.conf-pago-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.pago === medioPago);
   });
-
-  document.getElementById('conf-recibido').value = '';
-  document.getElementById('wrapper-efectivo').style.display = medioPago === 'efectivo' ? 'block' : 'none';
-  calcularCambio();
 
   openModal('modal-confirmacion');
 }
@@ -544,8 +573,6 @@ async function ejecutarVenta() {
   }
 
   const recibidoVal = parseFloat(document.getElementById('conf-recibido').value) || totalVentaActual;
-  const cambioTxt = document.getElementById('conf-cambio').textContent;
-
   const btn = document.getElementById('btn-ejecutar');
   btn.disabled = true;
   btn.innerHTML = '<i class="ti ti-loader-2" style="animation:spin 1s linear infinite"></i> Procesando…';
@@ -553,7 +580,7 @@ async function ejecutarVenta() {
   try {
     const r = await fetch(`${API}/sesiones/${sesionActual}/confirmar`, {
       method:'POST', headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({ mediopago: medioPago })
+      body: JSON.stringify({ mediopago: medioPago, recibido: recibidoVal, cambio: cambioNumerico })
     });
     if (!r.ok) {
       const e = await r.json();
@@ -567,7 +594,7 @@ async function ejecutarVenta() {
     const nombre = sesiones[sesionActual]?.nombre || 'Cliente';
 
     closeModal('modal-confirmacion');
-    mostrarTicket(d.idventa, d.total, items, nombre, recibidoVal, cambioTxt);
+    mostrarTicket(d.idventa, d.total, items, nombre, d.recibido, moneda(d.cambio));
 
     delete sesiones[sesionActual];
     sesionActual = null;
@@ -628,7 +655,6 @@ async function mostrarTicket(idventa, total, items, cliente, recibido = 0, cambi
 
   openModal('modal-ticket');
 }
-
 
 /* ── Lógica de Arqueo y Control de Caja ── */
 let arqueoActivoId = null;
@@ -743,8 +769,40 @@ async function ejecutarCierreCaja() {
   btn.disabled = false;
 }
 
-// Iniciar verificación al cargar la página
-verificarEstadoCaja();
+// --- AUTO-RECUPERADOR DE CAJAS ANTE DESCONEXIONES ---
+async function inicializarPuntoVenta() {
+  await verificarEstadoCaja();
+  await restaurarSesionesAbandonadas();
+}
+
+async function restaurarSesionesAbandonadas() {
+  try {
+    const r = await fetch(`${API}/sesiones`);
+    const cajasAbiertas = await r.json();
+    
+    if (cajasAbiertas && cajasAbiertas.length > 0) {
+      sesiones = {};
+      cajasAbiertas.forEach(caja => {
+        sesiones[caja.idsesion] = { 
+          nombre: caja.nombre_cliente, 
+          items: [] 
+        };
+      });
+      
+      sesionActual = cajasAbiertas[0].idsesion;
+      renderTabs();
+      cargarCarrito();
+      toast('Conexión reestablecida: Cajas restauradas', 'ok');
+    } else {
+      nuevaSesion();
+    }
+  } catch (e) {
+    console.error('Error de conexión al intentar recuperar cajas.');
+  }
+}
+
+// Arrancamos el sistema
+inicializarPuntoVenta();
 
 </script>
 <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
