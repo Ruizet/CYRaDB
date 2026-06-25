@@ -8,9 +8,30 @@
 <link rel="stylesheet" href="style.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
-.chart-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-top: 1.5rem; }
-.chart-container { background: var(--surface); padding: 1.5rem; border-radius: 8px; border: 1px solid var(--border); box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-@media(max-width:900px){ .chart-grid { grid-template-columns: 1fr; } }
+.chart-grid { 
+  display: grid; 
+  grid-template-columns: 1fr 1fr; 
+  gap: 1.5rem; 
+  margin-top: 1.5rem; 
+}
+
+.chart-container { 
+  background: var(--surface); 
+  padding: 1.5rem; 
+  border-radius: 8px; 
+  border: 1px solid var(--border); 
+  box-shadow: 0 2px 4px rgba(0,0,0,0.02); 
+}
+
+/* LA REGLA DE ORO PARA DOMAR A CHART.JS */
+.chart-container canvas {
+  max-height: 280px !important;
+  width: 100% !important;
+}
+
+@media(max-width:900px){ 
+  .chart-grid { grid-template-columns: 1fr; } 
+}
 </style>
 </head>
 <body>
@@ -32,6 +53,15 @@
         <h3 style="font-size:1rem; font-weight:600; margin-bottom:1rem; color:var(--text-1)">Top 5 Medicamentos Más Vendidos</h3>
         <canvas id="productosChart" height="250"></canvas>
       </div>
+      
+      <div class="chart-container">
+        <h3 style="font-size:1rem; font-weight:600; margin-bottom:1rem; color:var(--text-1)">Rendimiento de Empleados</h3>
+        <canvas id="empleadosChart" height="250"></canvas>
+      </div>
+      <div class="chart-container">
+        <h3 style="font-size:1rem; font-weight:600; margin-bottom:1rem; color:var(--text-1)">Ganancias vs Gastos (Últimos 30 días)</h3>
+        <canvas id="finanzasChart" height="250"></canvas>
+      </div>
     </div>
   </div>
 </div>
@@ -43,58 +73,73 @@ renderSidebar('reportes');
 
 async function cargarGraficos() {
   try {
-    // 1. Gráfico de Ventas Semanales (Línea Azul)
-    const resVentas = await fetch(`${API}/reportes/ventas-semana`);
-    const dataVentas = await resVentas.json();
-    
+    // 1. Pedimos todos los datos al mismo tiempo al servidor
+    const [resVentas, resProductos, resEmpleados, resFinanzas] = await Promise.all([
+       fetch(`${API}/reportes/ventas-semana`),
+       fetch(`${API}/reportes/top-productos`),
+       fetch(`${API}/reportes/top-empleados`),
+       fetch(`${API}/reportes/finanzas`)
+    ]);
+
+    // 2. Convertimos todas las respuestas a JSON
+    const [dataVentas, dataProductos, dataEmpleados, dataFinanzas] = await Promise.all([
+      resVentas.json(),
+      resProductos.json(),
+      resEmpleados.json(),
+      resFinanzas.json()
+    ]);
+
+    // 3. Dibujamos el Gráfico de Ventas
     new Chart(document.getElementById('ventasChart'), {
       type: 'line',
       data: {
         labels: dataVentas.map(d => d.dia),
-        datasets: [{
-          label: 'Ingresos Totales (C$)',
-          data: dataVentas.map(d => parseFloat(d.total)),
-          borderColor: '#0d6efd',
-          backgroundColor: 'rgba(13, 110, 253, 0.1)',
-          borderWidth: 2,
-          fill: true,
-          tension: 0.3
-        }]
+        datasets: [{ label: 'Ingresos Totales (C$)', data: dataVentas.map(d => parseFloat(d.total)), borderColor: '#0d6efd', backgroundColor: 'rgba(13, 110, 253, 0.1)', borderWidth: 2, fill: true, tension: 0.3 }]
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: { y: { beginAtZero: true } }
-      }
+      options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
     });
 
-    // 2. Gráfico de Productos Top (Barras Azules y Rojas)
-    const resProductos = await fetch(`${API}/reportes/top-productos`);
-    const dataProductos = await resProductos.json();
-
+    // 4. Dibujamos el Gráfico de Productos
     new Chart(document.getElementById('productosChart'), {
       type: 'bar',
       data: {
         labels: dataProductos.map(d => d.nombremedicamento),
+        datasets: [{ label: 'Unidades Vendidas', data: dataProductos.map(d => parseInt(d.cantidad)), backgroundColor: ['#0d6efd', '#dc3545', '#0a58ca', '#b02a37', '#86b7fe'], borderRadius: 4 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true } } }
+    });
+
+    // 5. Dibujamos el Gráfico de Empleados
+    new Chart(document.getElementById('empleadosChart'), {
+      type: 'doughnut',
+      data: {
+        labels: dataEmpleados.map(d => d.nombre),
+        datasets: [{ data: dataEmpleados.map(d => parseFloat(d.total_generado)), backgroundColor: ['#0d6efd', '#20c997', '#ffc107', '#fd7e14', '#dc3545'], borderWidth: 1 }]
+      },
+      options: { responsive: true, maintainAspectRatio: false }
+    });
+
+    // 6. Dibujamos el Gráfico de Finanzas
+    new Chart(document.getElementById('finanzasChart'), {
+      type: 'pie',
+      data: {
+        labels: ['Ganancias (Ventas)', 'Pérdidas (Compras)'],
         datasets: [{
-          label: 'Unidades Vendidas',
-          data: dataProductos.map(d => parseInt(d.cantidad)),
-          backgroundColor: ['#0d6efd', '#dc3545', '#0a58ca', '#b02a37', '#86b7fe'],
-          borderRadius: 4
+          data: [parseFloat(dataFinanzas.ganancias || 0), parseFloat(dataFinanzas.perdidas || 0)],
+          backgroundColor: ['#198754', '#dc3545'], // Verde para ganancias, Rojo para pérdidas
+          borderWidth: 1
         }]
       },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false,
-        scales: { y: { beginAtZero: true } }
-      }
+      options: { responsive: true, maintainAspectRatio: false }
     });
 
   } catch (err) {
     toast('Error cargando los reportes', 'err');
+    console.error(err);
   }
 }
 
+// Llamamos a la función una sola vez al final
 cargarGraficos();
 </script>
 </body>

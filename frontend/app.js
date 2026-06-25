@@ -13,18 +13,21 @@ function logout() { localStorage.removeItem('usuarioActual'); location.href = 'l
 
 function renderSidebar(paginaActiva, alertCount) {
   const u = getUsuario(); if (!u) return;
-  const links = [
+const links = [
     { href:'dashboard.html',          icon:'ti-layout-dashboard', label:'Dashboard',        key:'dashboard' },
     { href:'venta.html',              icon:'ti-shopping-cart',    label:'Ventas',            key:'venta' },
     { href:'ingreso.html',            icon:'ti-package',          label:'Ingresar',          key:'ingreso' },
     { href:'inventario.html',         icon:'ti-clipboard-list',   label:'Inventario',        key:'inventario' },
     { href:'detalleventas.html',      icon:'ti-receipt',          label:'Historial ventas',  key:'detalleventas' },
     { href:'detallecompras.html',     icon:'ti-truck',            label:'Historial compras', key:'detallecompras' },
-    { href:'ingresoproveedores.html', icon:'ti-building-store',   label:'Proveedores',       key:'proveedores' },
+    { href:'ingresoproveedores.html', icon:'ti-building-store',   label:'Proveedores',       key:'proveedores' }
   ];
+  
   const adminLinks = [
     { href:'gestionusuarios.html', icon:'ti-users', label:'Usuarios', key:'usuarios' },
+    { href:'reportes.html',        icon:'ti-chart-bar', label:'Reportes', key:'reportes' }
   ];
+
   const mkLink = l => {
     const badge = (l.key === 'dashboard' && alertCount) ? `<span class="nav-badge">${alertCount}</span>` : '';
     return `<a href="${l.href}" class="nav-link ${paginaActiva===l.key?'active':''}" title="${l.label}">
