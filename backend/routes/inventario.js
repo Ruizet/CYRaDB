@@ -105,4 +105,21 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+
+
+// POST /inventario/:id/baja  — Retirar stock de producto vencido
+router.post('/:id/baja', async (req, res) => {
+  try {
+    const result = await pool.query(
+      `UPDATE inventario SET cantidadlote = 0, descripcion = concat(descripcion, ' (Dado de baja por vencimiento)') 
+       WHERE idmedicamento = $1 RETURNING *`,
+      [req.params.id]
+    );
+    if (!result.rows.length) return res.status(404).json({ error: 'Lote no encontrado' });
+    res.json({ ok: true, message: 'Stock dado de baja correctamente' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 module.exports = router;
