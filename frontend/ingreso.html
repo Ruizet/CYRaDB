@@ -173,6 +173,7 @@ function setupAutocompleteNombre(id) {
   const input = document.getElementById(`nombre-${id}`);
   const list  = document.getElementById(`ac-${id}`);
   let timer;
+
   input.addEventListener('input', () => {
     clearTimeout(timer);
     const q = input.value.trim();
@@ -182,14 +183,19 @@ function setupAutocompleteNombre(id) {
         const r = await fetch(`${API}/inventario/buscar?q=${encodeURIComponent(q)}`);
         const grupos = await r.json();
         if (!grupos.length) { list.classList.remove('open'); return; }
-        list.innerHTML = grupos.slice(0,8).map(g=>`
-          <div class="ac-item" onmousedown="event.preventDefault();document.getElementById('nombre-${id}').value='${g.nombre.replace(/'/g,"\\'")}';list_${id}.classList.remove('open')">
-            <div class="ac-item-left"><span class="ac-item-name">${g.nombre}</span>
-              <span class="ac-item-pres">${g.lotes.length} lote(s) registrado(s)</span>
+        
+        // Guardamos los datos de la base temporalmente en el input para usarlos al hacer click
+        input.dataset.grupos = JSON.stringify(grupos);
+        
+        list.innerHTML = grupos.slice(0,8).map((g, idx) => `
+          <div class="ac-item" onmousedown="event.preventDefault(); aplicarProductoExistente(${id}, ${idx})">
+            <div class="ac-item-left">
+              <span class="ac-item-name">${g.nombre}</span>
+              <span class="ac-item-pres" style="color:var(--brand); font-weight: 500;">
+                <i class="ti ti-check"></i> Comprado anteriormente
+              </span>
             </div>
           </div>`).join('');
-        // Bind list reference for inline onclick
-        window[`list_${id}`] = list;
         list.classList.add('open');
       } catch {}
     }, 250);
@@ -197,6 +203,76 @@ function setupAutocompleteNombre(id) {
   document.addEventListener('click', e => {
     if (!input.contains(e.target)) list.classList.remove('open');
   });
+}
+
+function aplicarProductoExistente(id, index) {
+  const input = document.getElementById(`nombre-${id}`);
+  const list = document.getElementById(`ac-${id}`);
+  const grupos = JSON.parse(input.dataset.grupos || '[]');
+  const g = grupos[index];
+
+  if (!g) return;
+
+  // 1. Poner el nombre en el input y cerrar la lista
+  input.value = g.nombre;
+  list.classList.remove('open');
+
+  // 2. Extraer las presentaciones que ya hemos comprado antes para este medicamento
+  const presExistentes = [...new Set(g.lotes.map(l => l.presentacion))];
+
+  // 3. Modificar el panel de botones de presentación
+  const grid = document.getElementById(`pres-grid-${id}`);
+  let html = '';
+
+  // Primero mostramos resaltadas las que YA existen en base de datos
+  presExistentes.forEach(p => {
+    html += `<button type="button" class="pres-btn" style="border-color: var(--success); color: var(--success); font-weight: 600; background: var(--success-bg);" data-pres="${p}" onclick="selPres(${id},'${p}',this, true)">✓ ${p}</button>`;
+  });
+
+  // Luego mostramos las demás opciones grises por si quiere agregar una nueva presentación
+  PRESENTACIONES.forEach(p => {
+    if (!presExistentes.includes(p)) {
+      html += `<button type="button" class="pres-btn" data-pres="${p}" onclick="selPres(${id},'${p}',this, false)">${p}</button>`;
+    }
+  });
+
+  grid.innerHTML = html;
+
+  // Guardar en la memoria del navegador para auto-completar datos al dar click
+  window[`lotes_mem_${id}`] = g.lotes;
+
+  // Si solo tiene 1 presentación existente, se selecciona en automático para ahorrarle un click al usuario
+  if (presExistentes.length === 1) {
+    const btn = grid.querySelector(`[data-pres="${presExistentes[0]}"]`);
+    if (btn) btn.click();
+  }
+}
+
+function selPres(id, pres, btn, esExistente = false) {
+  document.querySelectorAll(`#pres-grid-${id} .pres-btn`).forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(`pres-${id}`).value = pres;
+
+  // AUTO-LLENADO MÁGICO: Si le dio click a una presentación verde, rellenar los datos
+  if (esExistente && window[`lotes_mem_${id}`]) {
+    const lotes = window[`lotes_mem_${id}`];
+    // Buscar el lote más reciente de esta presentación
+    const lote = lotes.find(l => l.presentacion === pres);
+    
+    if (lote) {
+       // Rellenar campos si existen
+       if (lote.descripcion) document.getElementById(`desc-${id}`).value = lote.descripcion;
+       if (lote.ubicacion_estante) document.getElementById(`ubic-${id}`).value = lote.ubicacion_estante;
+       if (lote.margen_porcentaje) document.getElementById(`margen-${id}`).value = lote.margen_porcentaje;
+       
+       recalcular(id); // Recalcular el precio de venta sugerido
+       toast(`Datos cargados para: ${pres}`, 'ok', 2000);
+    }
+  } else {
+    // Si selecciona una presentación nueva (gris), limpiamos los campos para que los escriba desde cero
+    document.getElementById(`desc-${id}`).value = '';
+    document.getElementById(`ubic-${id}`).value = '';
+  }
 }
 
 function selPres(id, pres, btn) {
